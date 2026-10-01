@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Physics 101: The Mechanics Odyssey — Educational Puzzle-Platformer</title>
+    <meta
+      name="description"
+      content="Physics 101: The Mechanics Odyssey is a rigorous educational physics puzzle-platformer exploring mechanics, kinematics, and circular motion."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app" class="game-container">
+      <!-- Top Navigation & Controls Header -->
+      <header class="game-header">
+        <div class="header-brand">
+          <span class="brand-badge">PHYSICS 101</span>
+          <h1 class="brand-title">The Mechanics Odyssey</h1>
+        </div>
+
+        <div class="header-controls">
+          <div class="control-group">
+            <label for="level-select">Mission:</label>
+            <select id="level-select" class="nav-select">
+              <option value="1">Level 1: Distance vs. Displacement</option>
+              <option value="2">Level 2: Speed vs. Velocity</option>
+              <option value="3">Level 3: Acceleration</option>
+              <option value="4">Level 4: UARM Kinematics</option>
+              <option value="5">Level 5: Rotation & Period</option>
+              <option value="6">Level 6: Linear vs. Rotational Speed</option>
+              <option value="7">Level 7: Tangential Velocity & ac</option>
+              <option value="8">Level 8: Centripetal Force</option>
+            </select>
+          </div>
+
+          <div class="hint-btn-group">
+            <button class="btn btn-tutorial" id="btn-tutorial-open" title="Open Complete Tutorial & Controls Guide">📖 Tutorial & Controls</button>
+            <button class="btn btn-hint" id="btn-hint-1" title="Conceptual Hint">💡 Concept</button>
+            <button class="btn btn-hint" id="btn-hint-2" title="Formula Hint">📐 Formula</button>
+            <button class="btn btn-hint" id="btn-hint-3" title="Step-by-Step Guided Solution">📝 Steps</button>
+          </div>
+
+          <div class="control-actions">
+            <button class="btn btn-icon" id="btn-practice-toggle" title="Toggle Practice Mode">🎓 Practice</button>
+            <button class="btn btn-icon" id="btn-vectors-toggle" title="Toggle Debug Vectors">⚡ Vectors</button>
+            <button class="btn btn-icon" id="btn-sound-toggle" title="Toggle Audio Feedback">🔊 Sound</button>
+            <button class="btn btn-icon" id="btn-contrast-toggle" title="High Contrast Mode">👁️ Contrast</button>
+            <button class="btn btn-icon" id="btn-pause-toggle" title="Pause / Resume">⏸️ Pause</button>
+            <button class="btn btn-icon" id="btn-reset" title="Restart Simulation">🔄 Reset</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Active Mission Instructions & Objective Banner -->
+      <section class="mission-banner" id="missionBanner">
+        <div class="banner-goal">
+          <span class="banner-badge">CURRENT GOAL</span>
+          <span class="banner-text" id="bannerGoalText">Loading objective...</span>
+        </div>
+        <div class="banner-controls">
+          <span class="banner-badge controls-badge">CONTROLS</span>
+          <span class="banner-text" id="bannerControlsText">Loading controls...</span>
+        </div>
+        <div class="banner-keys-live" id="liveKeysStrip">
+          <span class="live-label">ACTIVE KEYS:</span>
+          <span id="activeKeysDisplay" class="active-keys-tag">NONE</span>
+        </div>
+      </section>
+
+      <!-- Main Game Viewport -->
+      <main class="game-main">
+        <div class="canvas-wrapper">
+          <canvas id="gameCanvas" width="960" height="600"></canvas>
+          <div id="modalContainer" class="modal-overlay" style="display: none;"></div>
+
+          <!-- On-Screen Virtual Controller & Level Parameters Dock -->
+          <div class="onscreen-control-dock" id="onscreenControlDock">
+            <!-- Virtual D-Pad -->
+            <div class="virtual-dpad">
+              <button class="ctrl-btn dpad-btn" id="vbtn-up" data-key="arrowup">▲<span class="sub-key">W</span></button>
+              <div class="dpad-mid">
+                <button class="ctrl-btn dpad-btn" id="vbtn-left" data-key="arrowleft">◄<span class="sub-key">A</span></button>
+                <button class="ctrl-btn dpad-btn" id="vbtn-down" data-key="arrowdown">▼<span class="sub-key">S</span></button>
+                <button class="ctrl-btn dpad-btn" id="vbtn-right" data-key="arrowright">►<span class="sub-key">D</span></button>
+              </div>
+            </div>
+
+            <!-- Virtual Action Buttons -->
+            <div class="virtual-actions">
+              <button class="ctrl-btn action-btn boost" id="vbtn-boost" data-key="boost">⚡ BOOST<span class="sub-key">Shift</span></button>
+              <button class="ctrl-btn action-btn brake" id="vbtn-brake" data-key="brake">🛑 BRAKE<span class="sub-key">Space</span></button>
+              <button class="ctrl-btn action-btn launch" id="vbtn-action" data-key="action">🚀 ACTION<span class="sub-key">E / Enter</span></button>
+            </div>
+
+            <!-- Dynamic Level-Specific Controls (populated by main.ts) -->
+            <div class="level-specific-dock" id="levelSpecificDock">
+              <!-- Dynamically populated per active level -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-time Synchronized Physics HUD -->
+        <aside id="educationalHUD" class="hud-panel" aria-label="Physics Telemetry HUD">
+          <!-- Populated dynamically by EducationalHUD.render -->
+        </aside>
+      </main>
+
+      <!-- Keyboard & Control Legend Footer -->
+      <footer class="game-footer">
+        <div class="footer-keybinds">
+          <span class="key-pill">WASD / Arrow Keys</span> Move / Steer
+          <span class="key-pill">Space / B</span> Brake
+          <span class="key-pill">Shift</span> Thruster Boost
+          <span class="key-pill">E / Enter</span> Action / Release / Launch
+          <span class="key-pill">R</span> Quick Reset
+          <span class="key-pill">P</span> Pause
+        </div>
+        <div class="footer-footnote">
+          Deterministic 60Hz Fixed Timestep | SI Units (m, s, kg, N, rad/s) | OpenStax University Physics Standard
+        </div>
+      </footer>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
