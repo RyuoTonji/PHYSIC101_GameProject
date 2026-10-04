@@ -42,6 +42,7 @@ export class Level06_LinearVsRotational extends LevelBase {
     this.riders.forEach(r => (r.angularPos = 0));
     this.elapsedTime = 0;
     this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public fixedUpdate(dt: number, input: InputState): void {
@@ -53,12 +54,12 @@ export class Level06_LinearVsRotational extends LevelBase {
       rider.angularPos += this.angularVelocity * dt;
     }
 
-    // Player can switch focus between riders using 1, 2, 3 or arrows
-    if (input.move.y < 0) this.selectedRiderIndex = 0;
-    if (input.move.x !== 0) this.selectedRiderIndex = 1;
+    // Player can switch focus between riders using arrows or action
+    if (input.move.y < 0 || input.move.x < 0) this.selectedRiderIndex = 0;
+    if (input.move.x > 0) this.selectedRiderIndex = 1;
     if (input.move.y > 0) this.selectedRiderIndex = 2;
 
-    if (this.elapsedTime > 5.0 && (this.phase === 'puzzle' || this.phase === 'guided')) {
+    if ((this.elapsedTime > 5.0 || (this.elapsedTime > 2.0 && (input.action || input.jump))) && (this.phase === 'puzzle' || this.phase === 'guided')) {
       this.completePuzzle();
     }
   }

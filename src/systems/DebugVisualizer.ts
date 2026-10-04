@@ -88,61 +88,6 @@ export class DebugVisualizer {
       ctx.fill();
     }
 
-    // 2. HUD Telemetry Overlay (Top Left corner)
-    ctx.restore();
-    ctx.save();
-    ctx.fillStyle = 'rgba(10, 15, 29, 0.85)';
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.fillRect(10, 10, 280, 210);
-    ctx.strokeRect(10, 10, 280, 210);
-
-    ctx.font = '11px "JetBrains Mono", monospace';
-    ctx.fillStyle = '#00f0ff';
-    ctx.fillText('⚡ PHYSICS DEBUG TELEMETRY', 20, 28);
-
-    ctx.fillStyle = '#e2e8f0';
-    let y = 46;
-    const dy = 15;
-
-    ctx.fillText(`FPS: ${data.fps} | dt: ${(data.fixedTimestep * 1000).toFixed(1)}ms (60Hz)`, 20, y);
-    y += dy;
-    ctx.fillText(`Pos: (${data.position.x.toFixed(2)}, ${data.position.y.toFixed(2)}) m`, 20, y);
-    y += dy;
-    ctx.fillText(
-      `Vel: (${data.velocity.x.toFixed(2)}, ${data.velocity.y.toFixed(2)}) m/s [${data.velocity.magnitude().toFixed(2)}]`,
-      20,
-      y
-    );
-    y += dy;
-    ctx.fillText(
-      `Accel: (${data.acceleration.x.toFixed(2)}, ${data.acceleration.y.toFixed(2)}) m/s²`,
-      20,
-      y
-    );
-    y += dy;
-
-    if (data.centripetalAcceleration) {
-      ctx.fillText(
-        `Centripetal Accel: ${data.centripetalAcceleration.magnitude().toFixed(2)} m/s²`,
-        20,
-        y
-      );
-      y += dy;
-    }
-    if (data.centripetalForce) {
-      ctx.fillText(`Centripetal Force: ${data.centripetalForce.magnitude().toFixed(2)} N`, 20, y);
-      y += dy;
-    }
-    if (data.mass !== undefined) {
-      ctx.fillText(`Mass: ${data.mass.toFixed(1)} kg | μ: ${data.frictionCoeff ?? 0}`, 20, y);
-      y += dy;
-    }
-    if (data.collisionCount !== undefined) {
-      ctx.fillText(`Active Collisions: ${data.collisionCount}`, 20, y);
-      y += dy;
-    }
-
     ctx.restore();
   }
 

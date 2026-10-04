@@ -39,6 +39,7 @@ export class Level03_Acceleration extends LevelBase {
     this.accelerationPhaseTime = 0;
     this.hasMoved = false;
     this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public fixedUpdate(dt: number, input: InputState): void {

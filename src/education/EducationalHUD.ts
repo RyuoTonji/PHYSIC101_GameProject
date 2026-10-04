@@ -19,6 +19,11 @@ export interface HUDState {
   activeFormulaName: string;
   activeFormulaLatex: string;
   substitutedFormula: string;
+  // External telemetry and mission state
+  goalText?: string;
+  controlsText?: string;
+  activeKeys?: string[];
+  fps?: number;
 }
 
 export class EducationalHUD {
@@ -27,8 +32,12 @@ export class EducationalHUD {
       <div class="hud-item"><span class="hud-label">TIME</span> <span class="hud-val">${state.time.toFixed(2)} s</span></div>
     `;
 
+    if (state.speed !== undefined) {
+      rowsHtml += `<div class="hud-item"><span class="hud-label">SPEED v</span> <span class="hud-val">${state.speed.toFixed(2)} m/s</span></div>`;
+    }
+
     if (state.distance !== undefined) {
-      rowsHtml += `<div class="hud-item"><span class="hud-label">DISTANCE</span> <span class="hud-val">${state.distance.toFixed(2)} m</span></div>`;
+      rowsHtml += `<div class="hud-item"><span class="hud-label">DISTANCE d</span> <span class="hud-val">${state.distance.toFixed(2)} m</span></div>`;
     }
 
     if (state.displacementMag !== undefined) {
@@ -38,16 +47,12 @@ export class EducationalHUD {
       `;
     }
 
-    if (state.speed !== undefined) {
-      rowsHtml += `<div class="hud-item"><span class="hud-label">SPEED v</span> <span class="hud-val">${state.speed.toFixed(2)} m/s</span></div>`;
-    }
-
     if (state.accelerationMag !== undefined) {
       rowsHtml += `<div class="hud-item"><span class="hud-label">ACCEL a</span> <span class="hud-val">${state.accelerationMag.toFixed(2)} m/s²</span></div>`;
     }
 
     if (state.angularSpeed !== undefined) {
-      rowsHtml += `<div class="hud-item"><span class="hud-label">ANGULAR SPEED ω</span> <span class="hud-val">${state.angularSpeed.toFixed(2)} rad/s</span></div>`;
+      rowsHtml += `<div class="hud-item"><span class="hud-label">ANGULAR ω</span> <span class="hud-val">${state.angularSpeed.toFixed(2)} rad/s</span></div>`;
     }
 
     if (state.radius !== undefined) {
@@ -70,15 +75,43 @@ export class EducationalHUD {
       rowsHtml += `<div class="hud-item"><span class="hud-label">FREQUENCY f</span> <span class="hud-val">${state.frequency.toFixed(2)} Hz</span></div>`;
     }
 
+    const activeKeysStr = state.activeKeys && state.activeKeys.length > 0 ? state.activeKeys.join(' + ') : 'NONE';
+    const activeKeysColor = state.activeKeys && state.activeKeys.length > 0 ? '#00f0ff' : '#64748b';
+
     container.innerHTML = `
-      <div class="hud-telemetry-grid">
-        ${rowsHtml}
+      <!-- Telemetry Metrics Card -->
+      <div class="hud-card telemetry-card">
+        <div class="hud-card-header">
+          <span class="hud-badge">TELEMETRY</span>
+          <span class="hud-fps">${state.fps ?? 60} FPS</span>
+        </div>
+        <div class="hud-telemetry-grid">
+          ${rowsHtml}
+        </div>
       </div>
-      <div class="hud-formula-card">
+
+      <!-- Active Formula Card -->
+      <div class="hud-card formula-card">
         <div class="formula-badge">ACTIVE PHYSICAL FORMULA</div>
         <div class="formula-title">${state.activeFormulaName}</div>
         <div class="formula-math">${state.activeFormulaLatex}</div>
         <div class="formula-sub">${state.substitutedFormula}</div>
+      </div>
+
+      <!-- Mission Current Goal & Controls Card (moved to the right below metrics) -->
+      <div class="hud-card mission-card">
+        <div class="mission-section">
+          <div class="mission-badge goal">CURRENT GOAL</div>
+          <div class="mission-text">${state.goalText || 'Explore and experiment.'}</div>
+        </div>
+        <div class="mission-section">
+          <div class="mission-badge ctrl">CONTROLS</div>
+          <div class="mission-text">${state.controlsText || 'A/D: Move | Space: Jump | E: Action'}</div>
+        </div>
+        <div class="active-keys-row">
+          <span class="keys-label">ACTIVE KEYS:</span>
+          <span class="keys-val" style="color: ${activeKeysColor}">${activeKeysStr}</span>
+        </div>
       </div>
     `;
   }

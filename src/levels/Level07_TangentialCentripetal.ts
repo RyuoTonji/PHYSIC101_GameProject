@@ -44,6 +44,7 @@ export class Level07_TangentialCentripetal extends LevelBase {
     this.releasedTangent = false;
     this.elapsedTime = 0;
     this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public triggerIceRelease(): void {
@@ -55,7 +56,7 @@ export class Level07_TangentialCentripetal extends LevelBase {
     if (this.phase === 'completed' || this.phase === 'failed') return;
     this.elapsedTime += dt;
 
-    if (input.action || input.brake) {
+    if (input.action || input.brake || input.jump) {
       this.triggerIceRelease();
     }
 

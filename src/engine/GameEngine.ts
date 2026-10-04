@@ -9,6 +9,7 @@ import { HintSystem } from '../education/HintSystem.ts';
 import { QuizSystem, QuizQuestion } from '../education/QuizSystem.ts';
 import { FailureFeedback } from '../education/FailureFeedback.ts';
 import { TutorialSystem } from '../education/TutorialSystem.ts';
+import { SaveSystem } from '../systems/SaveSystem.ts';
 import { PHYSICS_CONSTANTS } from '../physics/PhysicsConstants.ts';
 
 export class GameEngine {
@@ -50,11 +51,52 @@ export class GameEngine {
     this.audio = new AudioFeedback();
     this.progression = new ProgressionSystem();
 
-    const initialLevelId = this.progression.getData().unlockedLevel || 1;
+    // Default to Central Hub (Level 0) for open adventure exploration
+    const initialLevelId = 0;
     this.currentLevel = LevelRegistry.createLevel(initialLevelId);
 
     this.input.attach(canvas);
     this.applySettings();
+    this.setupDeveloperHotkeys();
+  }
+
+  public isSlowMo: boolean = false;
+  public showHitboxes: boolean = false;
+
+  private setupDeveloperHotkeys(): void {
+    window.addEventListener('keydown', (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      if (key === 'f1') {
+        e.preventDefault();
+        const hud = document.getElementById('educationalHUD');
+        if (hud) hud.style.display = hud.style.display === 'none' ? 'block' : 'none';
+      } else if (key === 'f2' || key === 'v') {
+        e.preventDefault();
+        const s = this.progression.getData().settings;
+        s.debugVectors = !s.debugVectors;
+        SaveSystem.save(this.progression.getData());
+        const vBtn = document.getElementById('btn-vectors-toggle');
+        if (vBtn) vBtn.classList.toggle('active', s.debugVectors);
+      } else if (key === 'f3') {
+        e.preventDefault();
+        this.showHitboxes = !this.showHitboxes;
+      } else if (key === 'f4') {
+        e.preventDefault();
+        this.restartCurrentLevel();
+      } else if (key === 'f5' || key === 'h') {
+        // Return to Hub World
+        if (e.target && (e.target as HTMLElement).tagName !== 'INPUT') {
+          e.preventDefault();
+          this.loadLevel(0);
+          const sel = document.getElementById('level-select') as HTMLSelectElement | null;
+          if (sel) sel.value = '0';
+          window.dispatchEvent(new CustomEvent('levelChanged', { detail: { levelId: 0 } }));
+        }
+      } else if (key === 'f6') {
+        e.preventDefault();
+        this.isSlowMo = !this.isSlowMo;
+      }
+    });
   }
 
   public start(): void {
@@ -63,22 +105,38 @@ export class GameEngine {
     this.lastTime = performance.now();
     this.lastFpsUpdate = performance.now();
     this.accumulator = 0;
-    this.showPhaseModal();
+    // Start directly in the playable world! No blocking popup!
     requestAnimationFrame(this.gameLoop.bind(this));
   }
 
   public loadLevel(levelId: number): void {
     this.audio.stopEngineTone();
+    this.modalContainer.style.display = 'none';
+    this.modalContainer.innerHTML = '';
     this.currentLevel = LevelRegistry.createLevel(levelId);
+    this.currentLevel.setPhase('puzzle');
+    this.currentLevel.reset();
     this.activeQuizIndex = 0;
     this.quizAnswers.clear();
-    this.showPhaseModal();
   }
 
   public restartCurrentLevel(): void {
     this.audio.stopEngineTone();
+    this.modalContainer.style.display = 'none';
+    this.modalContainer.innerHTML = '';
     this.currentLevel.reset();
-    this.showPhaseModal();
+    this.currentLevel.elapsedTime = 0;
+    this.currentLevel.setPhase('puzzle');
+    this.currentLevel.failureContext = null;
+    this.activeQuizIndex = 0;
+    this.quizAnswers.clear();
+  }
+
+  public resetAllProgress(): void {
+    SaveSystem.resetProgress();
+    this.progression = new ProgressionSystem();
+    this.restartCurrentLevel();
+    this.applySettings();
   }
 
   public togglePause(): void {
@@ -111,6 +169,11 @@ export class GameEngine {
       frameTime = PHYSICS_CONSTANTS.MAX_ACCUMULATOR_STEP;
     }
 
+    // Apply slow motion if active (0.25x timescale for observing physics arcs)
+    if (this.isSlowMo) {
+      frameTime *= 0.25;
+    }
+
     // FPS calculation
     this.framesThisSec++;
     if (now - this.lastFpsUpdate >= 1000) {
@@ -126,18 +189,37 @@ export class GameEngine {
       this.togglePause();
     }
 
+    // Check instant reset
+    if (inputState.reset) {
+      this.restartCurrentLevel();
+    }
+
+    // Check portal transition requests from within the level
+    const reqLevelId = (this.currentLevel as any).requestedLevelLoad;
+    if (reqLevelId !== null && reqLevelId !== undefined) {
+      (this.currentLevel as any).requestedLevelLoad = null;
+      this.audio.playPortalTeleport();
+      this.loadLevel(reqLevelId);
+      const sel = document.getElementById('level-select') as HTMLSelectElement | null;
+      if (sel) sel.value = String(reqLevelId);
+      window.dispatchEvent(new CustomEvent('levelChanged', { detail: { levelId: reqLevelId } }));
+    }
+
     if (!this.isPaused) {
       this.accumulator += frameTime;
 
       // Deterministic fixed timestep loop (60Hz)
       while (this.accumulator >= PHYSICS_CONSTANTS.FIXED_TIMESTEP) {
-        this.currentLevel.fixedUpdate(PHYSICS_CONSTANTS.FIXED_TIMESTEP, inputState);
+        this.currentLevel.fixedUpdate(PHYSICS_CONSTANTS.FIXED_TIMESTEP, inputState, this.audio);
         this.accumulator -= PHYSICS_CONSTANTS.FIXED_TIMESTEP;
 
         // Monitor completion or failure
         if (this.currentLevel.phase === 'explanation' && !this.isModalOpen()) {
           this.audio.playSuccess();
           this.showPhaseModal();
+        } else if (this.currentLevel.phase === 'completed' && !this.isModalOpen()) {
+          this.audio.playSuccess();
+          this.renderCompletionScreen();
         } else if (this.currentLevel.phase === 'failed' && !this.isModalOpen()) {
           this.audio.playFailure();
           this.showPhaseModal();
@@ -146,7 +228,7 @@ export class GameEngine {
 
       // Audio feedback updates
       const hudState = this.currentLevel.getHUDState();
-      if (hudState.speed !== undefined && hudState.speed > 0.1) {
+      if (hudState.speed !== undefined && hudState.speed > 0.1 && (this.currentLevel as any).axel === undefined) {
         this.audio.playEngineTone(hudState.speed);
       } else {
         this.audio.stopEngineTone();
@@ -157,8 +239,14 @@ export class GameEngine {
     const alpha = this.accumulator / PHYSICS_CONSTANTS.FIXED_TIMESTEP;
     this.render(alpha);
 
-    // Update HUD telemetry
-    EducationalHUD.render(this.hudContainer, this.currentLevel.getHUDState());
+    // Update HUD telemetry and mission goals/controls in right panel
+    const hudState = this.currentLevel.getHUDState();
+    const tut = TutorialSystem.getTutorial(this.currentLevel.config.id);
+    hudState.goalText = tut.objective;
+    hudState.controlsText = tut.controlsExplanation;
+    hudState.activeKeys = this.input.getActiveKeyNames().map(k => k.toUpperCase());
+    hudState.fps = this.fpsCounter;
+    EducationalHUD.render(this.hudContainer, hudState);
 
     requestAnimationFrame(this.gameLoop.bind(this));
   }
@@ -498,8 +586,12 @@ export class GameEngine {
     this.modalContainer.style.display = 'flex';
 
     document.getElementById('btn-next-lvl')?.addEventListener('click', () => {
-      if (this.currentLevel.config.id < 8) {
-        this.loadLevel(this.currentLevel.config.id + 1);
+      const nextId = this.currentLevel.config.id + 1;
+      if (nextId <= 8) {
+        this.loadLevel(nextId);
+        const sel = document.getElementById('level-select') as HTMLSelectElement | null;
+        if (sel) sel.value = String(nextId);
+        window.dispatchEvent(new CustomEvent('levelChanged', { detail: { levelId: nextId } }));
       } else {
         this.modalContainer.style.display = 'none';
       }

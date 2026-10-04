@@ -5,14 +5,24 @@ import { PhysicsDivisionByZeroError } from './PhysicsErrors.ts';
  * Provides immutable operations to guarantee mathematical determinism.
  */
 export class Vector2 {
-  public readonly x: number;
-  public readonly y: number;
+  public x: number;
+  public y: number;
 
-  public static readonly ZERO = new Vector2(0, 0);
-  public static readonly UP = new Vector2(0, -1); // Standard 2D canvas coordinates (or can be flipped)
-  public static readonly DOWN = new Vector2(0, 1);
-  public static readonly LEFT = new Vector2(-1, 0);
-  public static readonly RIGHT = new Vector2(1, 0);
+  public static get ZERO(): Vector2 {
+    return new Vector2(0, 0);
+  }
+  public static get UP(): Vector2 {
+    return new Vector2(0, -1);
+  }
+  public static get DOWN(): Vector2 {
+    return new Vector2(0, 1);
+  }
+  public static get LEFT(): Vector2 {
+    return new Vector2(-1, 0);
+  }
+  public static get RIGHT(): Vector2 {
+    return new Vector2(1, 0);
+  }
 
   constructor(x: number = 0, y: number = 0) {
     this.x = Number.isFinite(x) ? (Object.is(x, -0) || x === 0 ? 0 : x) : 0;

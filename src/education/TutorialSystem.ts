@@ -10,23 +10,42 @@ export interface LevelTutorial {
 
 export class TutorialSystem {
   private static readonly TUTORIALS: Record<number, LevelTutorial> = {
+    0: {
+      levelId: 0,
+      title: 'Central Hub: The Mechanics Odyssey Nexus',
+      objective:
+        'Explore the interconnected research nexus, speak with researcher NPCs, test mechanics in the training playground, and enter mission portals.',
+      controlsExplanation:
+        '[A][D] or [◄][►] to Run. [Space] or [W] or [▲] to Jump. Hold [Shift] to Sprint. Press [E] to talk to NPCs, grab/throw crates, and enter portals.',
+      stepByStep: [
+        '1. Run and jump around the Hub. Notice the athletic coyote-time and variable jump height.',
+        '2. Approach Professor Vector, Torque, Newton, or Flux and press [E] to converse.',
+        '3. Test the Playground: Push the 20kg alloy crate up the ramp or press [E] to carry it.',
+        '4. Discover the secret observation balcony above the playground to find a hidden Physics Core!',
+        '5. Step into Portal 1 to begin Level 1: The Wandering Path, or use the Mission dropdown.'
+      ],
+      physicsInsight:
+        'Every mission in the Mechanics Odyssey is physically connected. Momentum, friction, mass, and vectors are tools for exploration and creative problem solving.',
+      expectedValues:
+        'Axel Mass: 30 kg | Gravity: 26 m/s² | Crate Mass: 20 kg | Pressure Threshold: 40 kg'
+    },
     1: {
       levelId: 1,
-      title: 'Level 1: Distance vs. Displacement',
+      title: 'Level 1: The Wandering Path (Distance vs. Displacement)',
       objective:
-        'Deliver the drone from the blue Start Pad to the green Target Dock (rf) across the city grid.',
+        'Travel from Base Camp to the Quantum Signal Beacon at the Summit. Choose between the safe winding path, the moving platform chasm, or the momentum ramp puzzle!',
       controlsExplanation:
-        'Use [W][A][S][D] or [Arrow Keys] to steer the drone thrusters. Hold [Shift] for high-speed boost. Press [Space] to activate air brakes.',
+        '[A][D] or [◄][►] to Run. [Space] / [W] / [▲] to Jump. [Shift] to Sprint. [E] to Pick up / Throw crates or activate portals. [R] to Respawn.',
       stepByStep: [
-        '1. Press [D] or [Right Arrow] to fly East toward the open corridor.',
-        '2. Press [W] or [Up Arrow] to steer North toward the green Target Dock.',
-        '3. Notice the HUD: Distance (gold trail) keeps growing with every turn, while Displacement |Δr| (dashed cyan line) is the direct arrow straight from Start to your drone.',
-        '4. Gently fly into the green dock at low speed (< 1.5 m/s) to complete delivery.'
+        '1. Route A (Safe Winding Valley): Take the lower path. Long, safe switchbacks with no death pits. Notice your distance grows to ~70m while displacement is only ~46m!',
+        '2. Route B (Dangerous Chasm Shortcut): Jump across floating pillars and ride the moving platform across the quantum rift. High risk, cuts distance down to ~48m!',
+        '3. Route C (Momentum Ramp & Crate Puzzle): A locked barrier blocks the direct tunnel. Push/carry the 20kg crate onto the 40kg switch, or sprint down the steep ramp to leap over the barrier!',
+        '4. Collect optional Physics Cores and reach the Summit Beacon to complete the mission.'
       ],
       physicsInsight:
         'Distance is a scalar representing total path length traveled (d = Σ Δs). Displacement is a vector from start to end (Δr⃗ = r⃗f - r⃗i). Notice that Distance ≥ |Displacement| always!',
       expectedValues:
-        'Direct straight displacement: ~16.55 m at ~25° North of East. Winding path distance: ~20 m - 30 m.'
+        'Summit coordinate: x = 49m, y = 6m. Direct straight displacement: ~46.5 m. Winding path distance: ~60 m - 75 m.'
     },
     2: {
       levelId: 2,
@@ -153,6 +172,24 @@ export class TutorialSystem {
         'Centripetal force is not a special new force; it is the physical inward force provided by real objects (string tension, friction, drum normal force). In an inertial frame, centrifugal force does NOT push water outward; water simply flies tangent through the holes because the wall cannot push it inward.',
       expectedValues:
         'Fc = m·v²/r = (2 kg)(10 m/s)² / (5 m) = 40.0 N inward.'
+    },
+    9: {
+      levelId: 9,
+      title: 'Free Play Physics Sandbox Lab',
+      objective:
+        'Freely spawn crates, adjust planetary gravity (Zero-G to Jupiter), test friction surfaces, and build physical setups.',
+      controlsExplanation:
+        'Use [A][D] to Move, [Space] to Jump, [E] to Grab/Throw crates. Click [Spawn Crate] or the gravity/friction dock buttons.',
+      stepByStep: [
+        '1. Spawn multiple crates of different masses.',
+        '2. Switch gravity between Zero-G, Moon (5 m/s²), Earth (22 m/s²), and Jupiter (45 m/s²). Observe jump arc changes!',
+        '3. Slide crates down the dual testing ramps to compare sliding friction.',
+        '4. Step into the portal on the far left to return to the Central Hub at any time.'
+      ],
+      physicsInsight:
+        'Kinematic trajectories and acceleration depend on gravitational field strength (g) and normal force friction (f_k = μ_k · N).',
+      expectedValues:
+        'Custom experimental values active in real-time.'
     }
   };
 

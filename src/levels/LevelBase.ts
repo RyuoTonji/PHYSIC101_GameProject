@@ -1,4 +1,5 @@
 import { InputState } from '../engine/InputManager.ts';
+import { AudioFeedback } from '../engine/AudioFeedback.ts';
 import { HUDState } from '../education/EducationalHUD.ts';
 import { DebugPhysicsData } from '../systems/DebugVisualizer.ts';
 import { ScoreBreakdown } from '../systems/ProgressionSystem.ts';
@@ -26,7 +27,7 @@ export interface LevelConfig {
 
 export abstract class LevelBase {
   public readonly config: LevelConfig;
-  public phase: LevelPhase = 'intro';
+  public phase: LevelPhase = 'puzzle';
   public elapsedTime: number = 0;
   public failureContext: PhysicsFailureContext | null = null;
   public lastScoreBreakdown: ScoreBreakdown | null = null;
@@ -36,7 +37,7 @@ export abstract class LevelBase {
   }
 
   public abstract reset(): void;
-  public abstract fixedUpdate(dt: number, input: InputState): void;
+  public abstract fixedUpdate(dt: number, input: InputState, audio?: AudioFeedback): void;
   public abstract render(ctx: CanvasRenderingContext2D, interpolation: number): void;
   public abstract getHUDState(): HUDState;
   public abstract getDebugData(): DebugPhysicsData;

@@ -38,6 +38,7 @@ export class Level04_UARM extends LevelBase {
     this.elapsedTime = 0;
     this.isLaunched = false;
     this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public launch(): void {
@@ -61,7 +62,7 @@ export class Level04_UARM extends LevelBase {
       this.accelX = this.constantAccel;
 
       // Launch trigger
-      if (input.action || input.brake || input.boost) {
+      if (input.action || input.brake || input.boost || input.jump) {
         this.launch();
       }
       return;

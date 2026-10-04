@@ -39,6 +39,8 @@ export class Level02_SpeedVelocity extends LevelBase {
     this.lastPos = new Vector2(2.0, 7.5);
     this.elapsedTime = 0;
     this.returnLoopActive = false;
+    this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public fixedUpdate(dt: number, input: InputState): void {
@@ -56,8 +58,12 @@ export class Level02_SpeedVelocity extends LevelBase {
       }
     } else {
       const driveSpeed = 6.0;
-      if (input.move.x !== 0) {
-        this.vehicleVel = new Vector2(input.move.x * driveSpeed, 0);
+      let driveX = input.move.x;
+      if (input.move.y < 0 || input.boost) driveX = 1;
+      if (input.move.y > 0) driveX = -1;
+
+      if (driveX !== 0) {
+        this.vehicleVel = new Vector2(driveX * driveSpeed, 0);
       } else {
         this.vehicleVel = this.vehicleVel.multiply(0.9);
       }
@@ -65,13 +71,14 @@ export class Level02_SpeedVelocity extends LevelBase {
 
     const step = this.vehicleVel.multiply(dt);
     this.vehiclePos = this.vehiclePos.add(step);
+    this.vehiclePos.x = Math.max(0, this.vehiclePos.x);
 
     // Track distance
     const d = this.vehiclePos.distanceTo(this.lastPos);
     this.totalDistance += d;
     this.lastPos = new Vector2(this.vehiclePos.x, this.vehiclePos.y);
 
-    // Win condition: reach finish gate (or complete loop)
+    // Win condition: reach finish gate
     if (this.vehiclePos.x >= this.finishLineX && (this.phase === 'puzzle' || this.phase === 'guided')) {
       this.completePuzzle();
     }

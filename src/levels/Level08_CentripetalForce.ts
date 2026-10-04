@@ -47,6 +47,7 @@ export class Level08_CentripetalForce extends LevelBase {
     this.ballVel = new Vector2(0, this.speed);
     this.elapsedTime = 0;
     this.failureContext = null;
+    this.setPhase('puzzle');
 
     // Reset water droplets for washing machine scenario
     this.waterDroplets = [];
@@ -105,7 +106,7 @@ export class Level08_CentripetalForce extends LevelBase {
         this.ballPos = this.ballPos.add(this.ballVel.multiply(dt));
       }
 
-      if (this.elapsedTime > 6.0 && (this.phase === 'puzzle' || this.phase === 'guided')) {
+      if ((this.elapsedTime > 6.0 || (this.elapsedTime > 2.0 && (input.action || input.jump))) && (this.phase === 'puzzle' || this.phase === 'guided')) {
         this.completePuzzle();
       }
     } else {
@@ -138,7 +139,7 @@ export class Level08_CentripetalForce extends LevelBase {
         }
       }
 
-      if (this.elapsedTime > 6.0 && (this.phase === 'puzzle' || this.phase === 'guided')) {
+      if ((this.elapsedTime > 6.0 || (this.elapsedTime > 2.0 && (input.action || input.jump))) && (this.phase === 'puzzle' || this.phase === 'guided')) {
         this.completePuzzle();
       }
     }

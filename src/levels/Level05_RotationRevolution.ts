@@ -39,6 +39,7 @@ export class Level05_RotationRevolution extends LevelBase {
     this.playerVel = Vector2.ZERO;
     this.onPlatform = false;
     this.failureContext = null;
+    this.setPhase('puzzle');
   }
 
   public fixedUpdate(dt: number, input: InputState): void {
@@ -57,8 +58,8 @@ export class Level05_RotationRevolution extends LevelBase {
     );
 
     if (this.phase === 'puzzle' || this.phase === 'guided') {
-      // Player movement
-      const speed = 5.0;
+      // Player movement with sprint support
+      const speed = input.sprint ? 7.5 : 5.0;
       if (input.move.magnitudeSquared() > 0) {
         this.playerVel = input.move.multiply(speed);
       } else {
@@ -68,13 +69,13 @@ export class Level05_RotationRevolution extends LevelBase {
       this.playerPos = this.playerPos.add(this.playerVel.multiply(dt));
 
       // Platform locking
-      if (this.playerPos.distanceTo(platformPos) < 1.2) {
+      if (this.playerPos.distanceTo(platformPos) < 1.4) {
         this.onPlatform = true;
         this.playerPos = platformPos;
       }
 
       // Check win condition (docking at destination landing pad)
-      if (this.playerPos.distanceTo(this.targetLandingPos) < 1.2) {
+      if (this.playerPos.distanceTo(this.targetLandingPos) < 1.4) {
         this.completePuzzle();
       }
     }
