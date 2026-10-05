@@ -691,43 +691,62 @@ export class PlatformerRenderer {
     crates: PhysicsCrate[]
   ): void {
     ctx.save();
-    // Axel velocity vector (Green)
-    const axelScreen = camera.worldToScreen(new Vector2(axel.pos.x + axel.size.x / 2, axel.pos.y + axel.size.y / 2));
-    const velScale = 6;
-    this.drawArrow(
-      ctx,
-      axelScreen.x,
-      axelScreen.y,
-      axelScreen.x + axel.vel.x * velScale,
-      axelScreen.y + axel.vel.y * velScale,
-      '#10b981',
-      `v: ${axel.vel.magnitude().toFixed(1)} m/s`
-    );
+    // Axel velocity vector (Green - clamped and centered)
+    const axelCenter = new Vector2(axel.pos.x + axel.size.x / 2, axel.pos.y + axel.size.y * 0.45);
+    const axelScreen = camera.worldToScreen(axelCenter);
+    const speed = axel.vel.magnitude();
 
-    // Gravity force vector (Amber)
+    if (speed > 0.15) {
+      // Scale length cleanly so it stays near character (max 48px)
+      const arrowLength = Math.min(48, Math.max(16, speed * 3.6));
+      const dir = axel.vel.normalize();
+      this.drawArrow(
+        ctx,
+        axelScreen.x,
+        axelScreen.y,
+        axelScreen.x + dir.x * arrowLength,
+        axelScreen.y + dir.y * arrowLength,
+        '#10b981',
+        `v: ${speed.toFixed(1)} m/s`
+      );
+    }
+
+    // Gravity force vector (Amber - compact 30px)
+    const fgLength = 30;
     this.drawArrow(
       ctx,
       axelScreen.x,
       axelScreen.y,
       axelScreen.x,
-      axelScreen.y + (axel.mass * 9.8 * 0.15),
+      axelScreen.y + fgLength,
       '#f59e0b',
       `F_g: ${(axel.mass * 9.8).toFixed(0)} N`
     );
 
-    // Crates vectors
+    // Crates vectors (only if active, not carried, and within camera viewport)
+    const cw = ctx.canvas.width;
+    const ch = ctx.canvas.height;
     for (const c of crates) {
-      if (c.vel.magnitude() > 0.2) {
-        const cScreen = camera.worldToScreen(new Vector2(c.pos.x + c.size.x / 2, c.pos.y + c.size.y / 2));
-        this.drawArrow(
-          ctx,
-          cScreen.x,
-          cScreen.y,
-          cScreen.x + c.vel.x * velScale,
-          cScreen.y + c.vel.y * velScale,
-          '#00f0ff',
-          `v: ${c.vel.magnitude().toFixed(1)}`
-        );
+      if (c.isCarried) continue;
+      const cSpeed = c.vel.magnitude();
+      if (cSpeed > 0.3) {
+        const cCenter = new Vector2(c.pos.x + c.size.x / 2, c.pos.y + c.size.y / 2);
+        const cScreen = camera.worldToScreen(cCenter);
+
+        // Viewport culling to prevent stray arrows
+        if (cScreen.x >= -30 && cScreen.x <= cw + 30 && cScreen.y >= -30 && cScreen.y <= ch + 30) {
+          const cDir = c.vel.normalize();
+          const cLen = Math.min(36, Math.max(14, cSpeed * 2.8));
+          this.drawArrow(
+            ctx,
+            cScreen.x,
+            cScreen.y,
+            cScreen.x + cDir.x * cLen,
+            cScreen.y + cDir.y * cLen,
+            '#00f0ff',
+            `v: ${cSpeed.toFixed(1)}`
+          );
+        }
       }
     }
     ctx.restore();
@@ -794,7 +813,7 @@ export class PlatformerRenderer {
     } else {
       // Carrying prompt
       const as = camera.worldToScreen(new Vector2(axel.pos.x + axel.size.x / 2, axel.pos.y - 0.8));
-      this.drawPromptPill(ctx, as.x, as.y, '[E] THROW / DROP');
+      this.drawPromptPill(ctx, as.x, as.y, '[E] PLACE  |  [SHIFT+E] THROW');
     }
 
     // Prompt near portals

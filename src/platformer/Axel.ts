@@ -28,24 +28,25 @@ export class Axel {
   public onMovingPlatform: MovingPlatform | null = null;
 
   // Jump tuning
-  public jumpStrength: number = -11.8; // m/s (~2.6m jump height)
+  public jumpStrength: number = -12.5; // m/s (~3.0m comfortable athletic jump)
   public gravity: number = 26.0; // m/s^2 snappy athletic gravity
   public coyoteTimer: number = 0;
   public jumpBufferTimer: number = 0;
-  private readonly COYOTE_TIME: number = 0.12;
-  private readonly JUMP_BUFFER: number = 0.12;
+  private readonly COYOTE_TIME: number = 0.15;
+  private readonly JUMP_BUFFER: number = 0.15;
 
   // Run tuning
-  public walkSpeed: number = 6.2; // m/s
-  public runSpeed: number = 9.2; // m/s
-  public groundAccel: number = 48.0; // m/s^2
-  public groundDecel: number = 38.0; // m/s^2
-  public airAccel: number = 26.0; // m/s^2
+  public walkSpeed: number = 6.4; // m/s
+  public runSpeed: number = 9.4; // m/s
+  public groundAccel: number = 52.0; // m/s^2
+  public groundDecel: number = 42.0; // m/s^2
+  public airAccel: number = 28.0; // m/s^2
 
   // Carrying & Interaction
   public carriedCrate: PhysicsCrate | null = null;
   public canInteract: boolean = false;
   public interactionTargetName: string = '';
+  public interactCooldown: number = 0;
 
   // Health & Respawn
   public hearts: number = 3;
@@ -68,6 +69,7 @@ export class Axel {
     input: {
       left: boolean;
       right: boolean;
+      down?: boolean;
       jumpPressed: boolean;
       jumpHeld: boolean;
       sprint: boolean;
@@ -77,15 +79,17 @@ export class Axel {
     ramps: RampSlope[],
     platforms: MovingPlatform[],
     crates: PhysicsCrate[]
-  ): { jumped: boolean; landed: boolean; threwCrate: boolean; pickedUpCrate: boolean } {
+  ): { jumped: boolean; landed: boolean; threwCrate: boolean; placedCrate: boolean; pickedUpCrate: boolean } {
     const events = {
       jumped: false,
       landed: false,
       threwCrate: false,
+      placedCrate: false,
       pickedUpCrate: false
     };
 
     this.animTime += dt;
+    this.interactCooldown = Math.max(0, this.interactCooldown - dt);
     if (this.isLandingSquish > 0) this.isLandingSquish -= dt * 6;
 
     // Update particle lifetimes
@@ -256,21 +260,37 @@ export class Axel {
       }
     }
 
-    // 7. Carry / Drop / Throw Crates with E key
-    if (input.interactPressed) {
+    // 7. Carry / Drop / Throw Crates with E key (Debounced to prevent oscillation glitch)
+    if (input.interactPressed && this.interactCooldown <= 0) {
       if (this.carriedCrate) {
-        // Throw or Drop carried crate
-        const throwDirection = new Vector2(this.facing, input.jumpHeld ? -0.7 : -0.2).normalize();
-        const throwImpulse = throwDirection.multiply(8.5).add(this.vel.multiply(0.5));
+        const wantsThrow = Boolean(input.sprint || input.jumpHeld || (input.right && this.facing > 0) || (input.left && this.facing < 0));
+        const wantsPlace = Boolean(input.down) || !wantsThrow;
 
         this.carriedCrate.isCarried = false;
-        this.carriedCrate.pos = new Vector2(
-          this.pos.x + (this.facing > 0 ? this.size.x + 0.1 : -this.carriedCrate.size.x - 0.1),
-          this.pos.y - 0.2
-        );
-        this.carriedCrate.vel = throwImpulse;
-        this.carriedCrate = null;
-        events.threwCrate = true;
+        this.interactCooldown = 0.12;
+        if (wantsPlace) {
+          // Gently PLACE crate down onto the floor/platform right at Axel's feet with zero velocity
+          const placeX = this.pos.x + (this.facing > 0 ? this.size.x + 0.15 : -this.carriedCrate.size.x - 0.15);
+          const placeY = this.pos.y + this.size.y - this.carriedCrate.size.y;
+          this.carriedCrate.pos = new Vector2(placeX, placeY);
+          this.carriedCrate.vel = new Vector2(this.facing * 0.4, 0);
+          this.carriedCrate.isGrounded = this.isGrounded;
+          this.carriedCrate = null;
+          events.placedCrate = true;
+          events.threwCrate = false;
+        } else {
+          // Throw carried crate with forward/upward impulse arc
+          const throwDirection = new Vector2(this.facing, input.jumpHeld ? -0.7 : -0.2).normalize();
+          const throwImpulse = throwDirection.multiply(8.5).add(this.vel.multiply(0.5));
+
+          this.carriedCrate.pos = new Vector2(
+            this.pos.x + (this.facing > 0 ? this.size.x + 0.2 : -this.carriedCrate.size.x - 0.2),
+            this.pos.y - 0.2
+          );
+          this.carriedCrate.vel = throwImpulse;
+          this.carriedCrate = null;
+          events.threwCrate = true;
+        }
       } else {
         // Pick up nearby crate
         const pickupReach = 1.6;
@@ -278,6 +298,7 @@ export class Axel {
           if (!crate.isCarried && this.pos.distanceTo(crate.pos) < pickupReach) {
             this.carriedCrate = crate;
             crate.isCarried = true;
+            this.interactCooldown = 0.12;
             events.pickedUpCrate = true;
             break;
           }

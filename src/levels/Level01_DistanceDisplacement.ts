@@ -105,62 +105,68 @@ export class Level01_DistanceDisplacement extends LevelBase {
     // Section 1: Base Camp Platform (x: 0 to 12, y: 18, w: 12, h: 4)
     this.solids.push({ x: 0, y: 18, w: 12, h: 4, type: 'ground' });
 
-    // ROUTE A: The Safe Winding Path (Lower Switchbacks)
-    // Staircase 1: x: 12 to 17, y: 19, w: 5, h: 3
-    this.solids.push({ x: 12, y: 19, w: 5, h: 3, type: 'ground' });
-    // Lower Valley Floor: x: 17 to 34, y: 20, w: 17, h: 2
-    this.solids.push({ x: 17, y: 20, w: 17, h: 2, type: 'ground' });
-    // Stepping Riser 1: x: 34 to 38, y: 18, w: 4, h: 4
-    this.solids.push({ x: 34, y: 18, w: 4, h: 4, type: 'ground' });
-    // Stepping Riser 2: x: 38 to 43, y: 15, w: 5, h: 7
-    this.solids.push({ x: 38, y: 15, w: 5, h: 7, type: 'ground' });
-    // Summit Approach Ramp (x: 43 to 48, y1: 15, y2: 10)
-    this.ramps.push({ x1: 43, y1: 15, x2: 48, y2: 10 });
-    // Summit Plateau (x: 48 to 56, y: 10, w: 8, h: 12)
-    this.solids.push({ x: 48, y: 10, w: 8, h: 12, type: 'ground' });
+    // ROUTE A: The Safe Winding Path (Terraced Stepping Traverse)
+    // Terrace 1: x: 12 to 17, y: 18.5, w: 5, h: 3.5
+    this.solids.push({ x: 12, y: 18.5, w: 5, h: 3.5, type: 'ground' });
+    // Terrace 2: x: 17 to 23, y: 19.0, w: 6, h: 3.0
+    this.solids.push({ x: 17, y: 19.0, w: 6, h: 3.0, type: 'ground' });
+    
+    // Contained Chasm Gap (x: 23 to 27) with Stepping Platform in middle
+    this.solids.push({ x: 24.2, y: 18.2, w: 1.8, h: 0.6, type: 'metal' });
+    
+    // Valley Floor continuation: x: 27 to 36, y: 18.5, w: 9, h: 3.5
+    this.solids.push({ x: 27, y: 18.5, w: 9, h: 3.5, type: 'ground' });
+    // Stepping Riser 1: x: 36 to 40, y: 16.0, w: 4, h: 6.0
+    this.solids.push({ x: 36, y: 16.0, w: 4, h: 6.0, type: 'ground' });
+    // Stepping Riser 2: x: 40 to 44, y: 13.5, w: 4, h: 8.5
+    this.solids.push({ x: 40, y: 13.5, w: 4, h: 8.5, type: 'ground' });
+    // Summit Approach Ramp (x: 44 to 48, y1: 13.5, y2: 10.0)
+    this.ramps.push({ x1: 44, y1: 13.5, x2: 48, y2: 10.0 });
+    // Summit Plateau (x: 48 to 56, y: 10.0, w: 8, h: 12.0)
+    this.solids.push({ x: 48, y: 10.0, w: 8, h: 12.0, type: 'ground' });
 
-    // ROUTE B: The Dangerous Quantum Chasm Shortcut (Upper Middle)
-    // Upper Starting Ledge: x: 8 to 14, y: 14, w: 6, h: 0.8
-    this.solids.push({ x: 8, y: 14, w: 6, h: 0.8, type: 'metal' });
-    // Floating Pillar 1: x: 18, y: 13, w: 2.5, h: 0.8
-    this.solids.push({ x: 18, y: 13, w: 2.5, h: 0.8, type: 'metal' });
-    // Moving Platform over the Rift: translates between (22, 12) and (30, 12)
-    this.platforms.push(new MovingPlatform(22.0, 12.0, 30.0, 12.0, 3.0, 0.6, 2.6));
-    // Floating Pillar 2: x: 32, y: 11, w: 3.0, h: 0.8
-    this.solids.push({ x: 32, y: 11, w: 3.0, h: 0.8, type: 'metal' });
+    // ROUTE B: The Mag-Lev Chasm Shortcut (Upper Path)
+    // Upper Starting Ledge: x: 8 to 14, y: 15.0, w: 6, h: 0.8 (easily reached by jumping from Base Camp)
+    this.solids.push({ x: 8, y: 15.0, w: 6, h: 0.8, type: 'metal' });
+    // Floating Pillar 1: x: 17, y: 13.5, w: 3.0, h: 0.8
+    this.solids.push({ x: 17, y: 13.5, w: 3.0, h: 0.8, type: 'metal' });
+    // Moving Platform over the Rift: translates between (22, 12.5) and (29, 12.5)
+    this.platforms.push(new MovingPlatform(22.0, 12.5, 29.0, 12.5, 3.2, 0.6, 2.5));
+    // Floating Pillar 2 (Mid Checkpoint Ledge): x: 31, y: 11.5, w: 4.0, h: 0.8
+    this.solids.push({ x: 31, y: 11.5, w: 4.0, h: 0.8, type: 'metal' });
 
     // ROUTE C: The Momentum Ramp & Crate Puzzle Shortcut
-    // Steep High Momentum Ramp: x: 4 to 8, y1: 10, y2: 14
-    this.ramps.push({ x1: 4, y1: 10, x2: 8, y2: 14 });
-    // High Launch Platform: x: 1 to 4, y: 10, w: 3, h: 0.8
-    this.solids.push({ x: 1, y: 10, w: 3, h: 0.8, type: 'metal' });
+    // Steep Momentum Ramp: x: 3 to 7, y1: 11.5, y2: 15.0
+    this.ramps.push({ x1: 3, y1: 11.5, x2: 7, y2: 15.0 });
+    // High Launch Platform: x: 0.5 to 3, y: 11.5, w: 2.5, h: 0.8
+    this.solids.push({ x: 0.5, y: 11.5, w: 2.5, h: 0.8, type: 'metal' });
 
-    // Puzzle Barrier blocking the Upper Shortcut Tunnel
-    const shortcutBarrier = new EnergyBarrier('barrier-lvl1', 37.0, 7.5, 0.5, 3.5, '#ef4444');
+    // Puzzle Barrier blocking the Upper Shortcut Tunnel to the Summit
+    const shortcutBarrier = new EnergyBarrier('barrier-lvl1', 37.0, 7.5, 0.5, 4.0, '#ef4444');
     this.barriers.push(shortcutBarrier);
 
-    // 40kg Pressure Switch next to the barrier
-    const puzzleSwitch = new PressureSwitch('switch-lvl1', 34.5, 10.7, 40.0);
+    // 20kg Pressure Switch: satisfied by placing the 20kg crate!
+    const puzzleSwitch = new PressureSwitch('switch-lvl1', 34.0, 11.2, 20.0);
     this.switches.push(puzzleSwitch);
 
-    // Quantum Crate (20kg) placed in Base Camp (can be pushed or carried to the switch!)
-    this.crates.push(new PhysicsCrate('crate-lvl1-1', 9.5, 13.0, 20.0));
+    // Quantum Crates (20kg each, can be placed gently with E or thrown!)
+    this.crates.push(new PhysicsCrate('crate-lvl1-1', 9.5, 13.5, 20.0));
+    this.crates.push(new PhysicsCrate('crate-lvl1-2', 5.0, 16.5, 20.0));
 
-    // Quantum Hazards in the Chasm
-    this.hazards.push(new QuantumHazard('hazard-rift-1', 14.5, 17.5, 3.0, 2.5, 'Quantum Fracture: Watch your jump timing!'));
-    this.hazards.push(new QuantumHazard('hazard-rift-2', 21.0, 16.5, 12.0, 3.5, 'Abyssal Rift: Use the moving platform or momentum jump!'));
+    // Fair, well-defined Quantum Hazard in the deep pit under the bridge
+    this.hazards.push(new QuantumHazard('hazard-rift-1', 23.0, 20.0, 4.0, 2.0, 'Abyssal Rift: Leap across the stepping platform!'));
 
     // Checkpoints
     const cpStart = new CheckpointBeacon('cp-lvl1-start', 3.0, 18.0);
     cpStart.isActive = true;
     this.checkpoints.push(cpStart);
-    this.checkpoints.push(new CheckpointBeacon('cp-lvl1-mid', 33.0, 11.0));
+    this.checkpoints.push(new CheckpointBeacon('cp-lvl1-mid', 33.0, 11.5));
     this.checkpoints.push(new CheckpointBeacon('cp-lvl1-summit', 49.0, 10.0));
 
     // Collectible Physics Cores
-    this.cores.push(new PhysicsCoreCollectible('core-lvl1-safe', 25.0, 18.5)); // along safe road
-    this.cores.push(new PhysicsCoreCollectible('core-lvl1-risky', 26.0, 9.5)); // above moving platform
-    this.cores.push(new PhysicsCoreCollectible('core-lvl1-secret', 2.0, 8.5)); // high momentum ledge
+    this.cores.push(new PhysicsCoreCollectible('core-lvl1-safe', 29.0, 17.0)); // along safe road
+    this.cores.push(new PhysicsCoreCollectible('core-lvl1-risky', 25.5, 10.5)); // above moving platform
+    this.cores.push(new PhysicsCoreCollectible('core-lvl1-secret', 1.5, 10.0)); // high momentum ledge
 
     // Return Portal to Hub at Base Camp
     this.portals.push(
@@ -181,23 +187,33 @@ export class Level01_DistanceDisplacement extends LevelBase {
       plat.update(dt);
     }
 
-    // 2. Update Axel with responsive jump & sprint controls
+    // 2. Active Solids (including locked puzzle barrier)
+    const activeSolids = [...this.solids];
+    for (const b of this.barriers) {
+      if (b.isActive) {
+        activeSolids.push({ x: b.pos.x, y: b.pos.y, w: b.size.x, h: b.size.y, type: 'metal' });
+      }
+    }
+
+    // Update Axel with responsive controls
     const moveX = input.move.x;
+    const moveY = input.move.y;
     const jumpPressed = input.jumpPressed;
     const jumpHeld = input.jump;
-    const interactPressed = input.action;
+    const interactPressed = Boolean(input.actionPressed ?? input.action);
 
     const axelEvents = this.axel.update(
       dt,
       {
         left: moveX < -0.2,
         right: moveX > 0.2,
-        jumpPressed,
-        jumpHeld,
-        sprint: input.sprint,
+        down: moveY > 0.2,
+        jumpPressed: Boolean(jumpPressed),
+        jumpHeld: Boolean(jumpHeld),
+        sprint: Boolean(input.sprint),
         interactPressed
       },
-      this.solids,
+      activeSolids,
       this.ramps,
       this.platforms,
       this.crates
@@ -206,7 +222,7 @@ export class Level01_DistanceDisplacement extends LevelBase {
     if (axelEvents.jumped) audio?.playJump();
     if (axelEvents.landed) audio?.playLanding();
     if (axelEvents.pickedUpCrate) audio?.playPickup();
-    if (axelEvents.threwCrate) audio?.playThrow();
+    if (axelEvents.threwCrate || axelEvents.placedCrate) audio?.playThrow();
 
     // 3. Accumulate Path Distance & Track Displacement
     const stepDist = this.axel.pos.distanceTo(this.lastSamplePos);
@@ -221,7 +237,7 @@ export class Level01_DistanceDisplacement extends LevelBase {
 
     // 4. Update Crates
     for (const crate of this.crates) {
-      crate.update(dt, this.axel.gravity, this.solids, this.ramps, this.platforms);
+      crate.update(dt, this.axel.gravity, activeSolids, this.ramps, this.platforms);
     }
 
     // 5. Update Switches & Barriers
@@ -229,11 +245,11 @@ export class Level01_DistanceDisplacement extends LevelBase {
       sw.update(this.axel.pos, this.axel.size, this.axel.mass, this.crates);
       if (sw.justActivated) audio?.playSwitch();
     }
-    // Update connected barrier (disables when switch is activated!)
+    // Update connected barrier (latches open once solved)
     const pzSwitch = this.switches.find(s => s.id === 'switch-lvl1');
     const pzBarrier = this.barriers.find(b => b.id === 'barrier-lvl1');
-    if (pzSwitch && pzBarrier) {
-      pzBarrier.isActive = !pzSwitch.isActivated;
+    if (pzSwitch && pzBarrier && pzSwitch.isActivated) {
+      pzBarrier.isActive = false;
     }
 
     // 6. Update Hazards & Checkpoint Respawn
@@ -348,27 +364,32 @@ export class Level01_DistanceDisplacement extends LevelBase {
     }
     ctx.stroke();
 
-    // 2. Direct displacement vector (Cyan solid line with arrow from Start to Axel)
+    // 2. Direct displacement vector (Subtle cyan dashed radar vector with arrow)
     const startScreen = this.camera.worldToScreen(this.startPos);
-    const axelScreen = this.camera.worldToScreen(new Vector2(this.axel.pos.x + 0.4, this.axel.pos.y + 0.7));
+    const axelCenter = new Vector2(this.axel.pos.x + this.axel.size.x * 0.5, this.axel.pos.y + this.axel.size.y * 0.5);
+    const axelScreen = this.camera.worldToScreen(axelCenter);
+    const dispMag = this.startPos.distanceTo(axelCenter);
 
-    ctx.setLineDash([]);
-    ctx.strokeStyle = 'rgba(0, 240, 255, 0.85)';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(startScreen.x, startScreen.y);
-    ctx.lineTo(axelScreen.x, axelScreen.y);
-    ctx.stroke();
+    if (dispMag > 0.5) {
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(startScreen.x, startScreen.y);
+      ctx.lineTo(axelScreen.x, axelScreen.y);
+      ctx.stroke();
 
-    // Draw Displacement vector arrowhead
-    const angle = Math.atan2(axelScreen.y - startScreen.y, axelScreen.x - startScreen.x);
-    ctx.fillStyle = '#00f0ff';
-    ctx.beginPath();
-    ctx.moveTo(axelScreen.x, axelScreen.y);
-    ctx.lineTo(axelScreen.x - 12 * Math.cos(angle - 0.4), axelScreen.y - 12 * Math.sin(angle - 0.4));
-    ctx.lineTo(axelScreen.x - 12 * Math.cos(angle + 0.4), axelScreen.y - 12 * Math.sin(angle + 0.4));
-    ctx.closePath();
-    ctx.fill();
+      // Clean arrowhead
+      const angle = Math.atan2(axelScreen.y - startScreen.y, axelScreen.x - startScreen.x);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#00f0ff';
+      ctx.beginPath();
+      ctx.moveTo(axelScreen.x, axelScreen.y);
+      ctx.lineTo(axelScreen.x - 9 * Math.cos(angle - 0.35), axelScreen.y - 9 * Math.sin(angle - 0.35));
+      ctx.lineTo(axelScreen.x - 9 * Math.cos(angle + 0.35), axelScreen.y - 9 * Math.sin(angle + 0.35));
+      ctx.closePath();
+      ctx.fill();
+    }
 
     ctx.restore();
   }

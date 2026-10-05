@@ -6,23 +6,14 @@ export class AudioFeedback {
   private ctx: AudioContext | null = null;
   private engineOsc: OscillatorNode | null = null;
   private engineGain: GainNode | null = null;
-  private isMuted: boolean = false;
+  private isMuted: boolean = true;
 
   private initContext(): void {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtx();
-    }
-    if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume();
-    }
+    // Silenced as requested by user
   }
 
   public setMuted(muted: boolean): void {
     this.isMuted = muted;
-    if (this.engineGain && this.ctx) {
-      this.engineGain.gain.setValueAtTime(muted ? 0 : 0.05, this.ctx.currentTime);
-    }
   }
 
   public playEngineTone(speed: number, maxSpeed: number = 20): void {

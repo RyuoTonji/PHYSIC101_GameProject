@@ -126,18 +126,24 @@ export class Level09_PhysicsSandbox extends LevelBase {
     this.solids.push({ x: 12, y: 14, w: 6, h: 4, type: 'metal' });
     this.ramps.push({ x1: 18, y1: 14, x2: 24, y2: 18 });
 
-    // High Observation Platform
-    this.solids.push({ x: 26, y: 11, w: 8, h: 0.8, type: 'metal' });
+    // Weight-Activated Elevator Platform (rises from y: 11 to y: 6.0 when mass >= 35kg)
+    const elevator = new MovingPlatform(26.0, 11.0, 26.0, 6.0, 8.0, 0.8, 2.5);
+    elevator.direction = 0; // Controlled by mass switch
+    this.platforms.push(elevator);
 
-    // Moving Platform
+    // High Sky Deck Observation Point (x: 24, y: 5.5, w: 12, h: 0.8)
+    this.solids.push({ x: 24, y: 5.5, w: 12, h: 0.8, type: 'metal' });
+    this.cores.push(new PhysicsCoreCollectible('core-sb-sky', 30.0, 4.2));
+
+    // Moving Chasm Platform
     this.platforms.push(new MovingPlatform(36.0, 14.0, 44.0, 14.0, 3.2, 0.6, 3.0));
 
-    // Initial Crates
+    // Initial Crates: 15kg and 20kg (together = 35kg to trigger elevator!)
     this.crates.push(new PhysicsCrate('crate-sb-1', 13.0, 12.0, 15.0));
-    this.crates.push(new PhysicsCrate('crate-sb-2', 15.0, 12.0, 30.0));
+    this.crates.push(new PhysicsCrate('crate-sb-2', 15.0, 12.0, 20.0));
 
-    // Test Switch
-    this.switches.push(new PressureSwitch('switch-sb', 28.0, 10.2, 35.0));
+    // Elevator Mass Sensor Switch
+    this.switches.push(new PressureSwitch('switch-sb', 28.0, 10.7, 35.0));
 
     // Return Portal to Hub
     this.portals.push(
@@ -149,23 +155,51 @@ export class Level09_PhysicsSandbox extends LevelBase {
     this.elapsedTime += dt;
     this.axel.gravity = this.gravitySetting;
 
-    for (const plat of this.platforms) {
-      plat.update(dt);
+    // Weight switch controls elevator
+    const elevator = this.platforms[0];
+    const sw = this.switches[0];
+    if (sw && elevator) {
+      if (sw.isActivated) {
+        // Rise to top
+        if (elevator.pos.y > 6.0) {
+          elevator.pos.y = Math.max(6.0, elevator.pos.y - 2.5 * dt);
+          elevator.velocity = new Vector2(0, -2.5);
+        } else {
+          elevator.velocity = Vector2.ZERO;
+        }
+      } else {
+        // Descend to base
+        if (elevator.pos.y < 11.0) {
+          elevator.pos.y = Math.min(11.0, elevator.pos.y + 2.0 * dt);
+          elevator.velocity = new Vector2(0, 2.0);
+        } else {
+          elevator.velocity = Vector2.ZERO;
+        }
+      }
+      // Keep switch aligned with elevator platform
+      sw.pos.y = elevator.pos.y - 0.3;
+    }
+
+    // Update other platforms
+    for (let i = 1; i < this.platforms.length; i++) {
+      this.platforms[i].update(dt);
     }
 
     const moveX = input.move.x;
+    const moveY = input.move.y;
     const jumpPressed = input.jumpPressed;
     const jumpHeld = input.jump;
-    const interactPressed = input.action;
+    const interactPressed = Boolean(input.actionPressed ?? input.action);
 
     const axelEvents = this.axel.update(
       dt,
       {
         left: moveX < -0.2,
         right: moveX > 0.2,
-        jumpPressed,
-        jumpHeld,
-        sprint: input.sprint,
+        down: moveY > 0.2,
+        jumpPressed: Boolean(jumpPressed),
+        jumpHeld: Boolean(jumpHeld),
+        sprint: Boolean(input.sprint),
         interactPressed
       },
       this.solids,
@@ -177,15 +211,16 @@ export class Level09_PhysicsSandbox extends LevelBase {
     if (axelEvents.jumped) audio?.playJump();
     if (axelEvents.landed) audio?.playLanding();
     if (axelEvents.pickedUpCrate) audio?.playPickup();
-    if (axelEvents.threwCrate) audio?.playThrow();
+    if (axelEvents.threwCrate || axelEvents.placedCrate) audio?.playThrow();
 
     for (const crate of this.crates) {
       crate.frictionCoeff = this.frictionSetting;
       crate.update(dt, this.gravitySetting, this.solids, this.ramps, this.platforms);
     }
 
-    for (const sw of this.switches) {
-      sw.update(this.axel.pos, this.axel.size, this.axel.mass, this.crates);
+    for (const s of this.switches) {
+      s.update(this.axel.pos, this.axel.size, this.axel.mass, this.crates);
+      if (s.justActivated) audio?.playSwitch();
     }
 
     if (interactPressed) {

@@ -32,7 +32,7 @@ export class SaveSystem {
     settings: {
       highContrast: false,
       textSize: 'normal',
-      soundEnabled: true,
+      soundEnabled: false,
       reducedMotion: false,
       debugVectors: true
     },

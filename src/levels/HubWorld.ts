@@ -94,19 +94,23 @@ export class HubWorld extends LevelBase {
     // --- Main Ground Floors ---
     // Left hub ground (x: 0 to 22, y: 18, w: 22, h: 4)
     this.solids.push({ x: 0, y: 18, w: 22, h: 4, type: 'ground' });
+    // Safe Pedestrian Skybridge connecting left and right sectors
+    this.solids.push({ x: 21, y: 18, w: 8, h: 4, type: 'bridge' });
     // Right hub ground (x: 28 to 54, y: 18, w: 26, h: 4)
     this.solids.push({ x: 28, y: 18, w: 26, h: 4, type: 'ground' });
     // Boundaries
     this.solids.push({ x: -1, y: 0, w: 1, h: 22, type: 'wall' });
     this.solids.push({ x: 54, y: 0, w: 1, h: 22, type: 'wall' });
 
-    // Central Chasm with Mag-lev Moving Platform
-    this.platforms.push(new MovingPlatform(20.5, 17.5, 29.5, 17.5, 3.2, 0.6, 2.8));
+    // Express Mag-lev Moving Platform overhead (x: 20.5 to 29.5 at y: 14.5)
+    this.platforms.push(new MovingPlatform(20.5, 14.5, 29.5, 14.5, 3.2, 0.6, 2.8));
 
-    // Playground Training Ramp (x: 6 to 11, y1: 18, y2: 15)
+    // Playground Training Ramp Up (x: 6 to 11, y1: 18, y2: 15)
     this.ramps.push({ x1: 6, y1: 18, x2: 11, y2: 15 });
     // Upper Playground Deck (x: 11 to 16, y: 15, w: 5, h: 3)
     this.solids.push({ x: 11, y: 15, w: 5, h: 3, type: 'metal' });
+    // Playground Training Ramp Down to Right (x: 16 to 20, y1: 15, y2: 18) - Smooth passage both ways!
+    this.ramps.push({ x1: 16, y1: 15, x2: 20, y2: 18 });
 
     // Secret Observation Balcony high up (x: 2, y: 11, w: 5, h: 0.6)
     this.solids.push({ x: 2, y: 11, w: 5, h: 0.6, type: 'bridge' });
@@ -116,36 +120,58 @@ export class HubWorld extends LevelBase {
     // Secret Core on the Balcony!
     this.cores.push(new PhysicsCoreCollectible('core-hub-secret', 3.5, 9.8));
 
-    // Right Station Elevated Platforms
-    this.solids.push({ x: 33, y: 14, w: 7, h: 0.8, type: 'metal' });
-    this.solids.push({ x: 44, y: 12, w: 8, h: 0.8, type: 'metal' });
+    // Training Crates (Accessible from both sides of the ramp)
+    this.crates.push(new PhysicsCrate('crate-hub-1', 8.5, 16.5, 20.0));
+    this.crates.push(new PhysicsCrate('crate-hub-2', 13.0, 13.8, 20.0));
 
-    // Training Crate (can be pushed up ramp or used to reach the balcony!)
-    this.crates.push(new PhysicsCrate('crate-hub-1', 9.0, 16.5, 20.0));
-
-    // Training Pressure Switch
-    const trainingSwitch = new PressureSwitch('switch-hub-1', 13.0, 14.7, 40.0);
+    // Training Pressure Switch: 20kg (satisfied by 1 crate or Axel)
+    const trainingSwitch = new PressureSwitch('switch-hub-1', 13.5, 14.7, 20.0);
     this.switches.push(trainingSwitch);
 
-    // Connected Energy Barrier that deactivates when switch is satisfied
-    const trainingBarrier = new EnergyBarrier('barrier-hub-1', 15.5, 11.5, 0.4, 3.5, '#10b981');
+    // Decorative Training Gateway (Unlocked - clear passage for player & crates)
+    const trainingBarrier = new EnergyBarrier('barrier-hub-1', 16.0, 11.5, 0.4, 3.5, '#10b981');
+    trainingBarrier.isActive = false;
     this.barriers.push(trainingBarrier);
-
-    // Hazard in the bottom of the central chasm
-    this.hazards.push(new QuantumHazard('hazard-hub-chasm', 22.0, 19.5, 6.0, 3.0, 'Central Chasm Energy Grid'));
 
     // Checkpoint at start
     this.checkpoints.push(new CheckpointBeacon('cp-hub-start', 4.0, 18.0));
 
-    // Portals
+    // --- GRAND PORTAL PAVILION (Right Wing: Accessible Terraces) ---
+    // Tier 1: Lower Kinematics Terrace (y = 16.2, gentle ramp from floor)
+    this.ramps.push({ x1: 29.5, y1: 18, x2: 32, y2: 16.2 });
+    this.solids.push({ x: 32, y: 16.2, w: 12, h: 1.8, type: 'metal' });
+
+    // Tier 1 Portals (Levels 1, 2, 3)
     this.portals.push(
-      new QuantumPortal('portal-lvl1', 1, 'Level 1: The Wandering Path', 'Kinematics: Distance vs Displacement', 35.0, 11.2)
+      new QuantumPortal('portal-lvl1', 1, 'Level 1: The Wandering Path', 'Kinematics: Distance vs Displacement', 32.5, 13.4),
+      new QuantumPortal('portal-lvl2', 2, 'Level 2: The Speedway', 'Kinematics: Speed vs Velocity', 36.5, 13.4),
+      new QuantumPortal('portal-lvl3', 3, 'Level 3: Newton’s Rig', 'Dynamics: Acceleration & F = ma', 40.5, 13.4)
     );
+
+    // Tier 2: Motion & UARM Terrace (y = 14.4, smooth ramp from Tier 1)
+    this.ramps.push({ x1: 44, y1: 16.2, x2: 46, y2: 14.4 });
+    this.solids.push({ x: 46, y: 14.4, w: 7.5, h: 3.6, type: 'metal' });
+
+    // Tier 2 Portals (Levels 4, 5)
     this.portals.push(
-      new QuantumPortal('portal-lvl2', 2, 'Level 2: The Speedway', 'Kinematics: Speed vs Velocity', 47.0, 9.2)
+      new QuantumPortal('portal-lvl4', 4, 'Level 4: The Braking Corridor', 'Uniform Acceleration & UARM', 46.8, 11.6),
+      new QuantumPortal('portal-lvl5', 5, 'Level 5: Orbital Carousel', 'Rotation & Revolution, T = 2π/ω', 50.5, 11.6)
     );
+
+    // Tier 3: Circular Motion Spire (y = 12.0, accessible via wide stepping platforms)
+    this.solids.push({ x: 33, y: 14.2, w: 2.2, h: 0.5, type: 'bridge' });
+    this.solids.push({ x: 31, y: 12.0, w: 12, h: 0.8, type: 'metal' });
+
+    // Tier 3 Portals (Levels 6, 7, 8)
     this.portals.push(
-      new QuantumPortal('portal-sandbox', 9, 'Physics Playground', 'Free Play Simulation Lab', 49.0, 15.2)
+      new QuantumPortal('portal-lvl6', 6, 'Level 6: Centrifuge Spire', 'Linear vs Angular Speed, v = r·ω', 31.8, 9.2),
+      new QuantumPortal('portal-lvl7', 7, 'Level 7: The Drift Carnival', 'Tangential Velocity & ac = v²/r', 35.8, 9.2),
+      new QuantumPortal('portal-lvl8', 8, 'Level 8: Cosmic Tether & Spin Lab', 'Centripetal Force Fc = mv²/r', 39.8, 9.2)
+    );
+
+    // Physics Playground / Sandbox Portal (Prominently placed at ground level entrance)
+    this.portals.push(
+      new QuantumPortal('portal-sandbox', 9, 'Physics Playground', 'Free Play Simulation Lab', 25.0, 15.2)
     );
 
     // NPCs
@@ -203,23 +229,33 @@ export class HubWorld extends LevelBase {
       plat.update(dt);
     }
 
-    // 2. Update Axel with responsive jump & sprint controls
+    // 2. Active Solids (including locked energy barriers)
+    const activeSolids = [...this.solids];
+    for (const b of this.barriers) {
+      if (b.isActive) {
+        activeSolids.push({ x: b.pos.x, y: b.pos.y, w: b.size.x, h: b.size.y, type: 'metal' });
+      }
+    }
+
+    // Update Axel with responsive jump, sprint, and down controls
     const moveX = input.move.x;
+    const moveY = input.move.y;
     const jumpPressed = input.jumpPressed;
     const jumpHeld = input.jump;
-    const interactPressed = input.action;
+    const interactPressed = Boolean(input.actionPressed ?? input.action);
 
     const axelEvents = this.axel.update(
       dt,
       {
         left: moveX < -0.2,
         right: moveX > 0.2,
-        jumpPressed,
-        jumpHeld,
-        sprint: input.sprint,
+        down: moveY > 0.2,
+        jumpPressed: Boolean(jumpPressed),
+        jumpHeld: Boolean(jumpHeld),
+        sprint: Boolean(input.sprint),
         interactPressed
       },
-      this.solids,
+      activeSolids,
       this.ramps,
       this.platforms,
       this.crates
@@ -228,11 +264,11 @@ export class HubWorld extends LevelBase {
     if (axelEvents.jumped) audio?.playJump();
     if (axelEvents.landed) audio?.playLanding();
     if (axelEvents.pickedUpCrate) audio?.playPickup();
-    if (axelEvents.threwCrate) audio?.playThrow();
+    if (axelEvents.threwCrate || axelEvents.placedCrate) audio?.playThrow();
 
     // 3. Update Crates
     for (const crate of this.crates) {
-      crate.update(dt, this.axel.gravity, this.solids, this.ramps, this.platforms);
+      crate.update(dt, this.axel.gravity, activeSolids, this.ramps, this.platforms);
     }
 
     // 4. Update Switches & Barriers
@@ -240,11 +276,11 @@ export class HubWorld extends LevelBase {
       sw.update(this.axel.pos, this.axel.size, this.axel.mass, this.crates);
       if (sw.justActivated) audio?.playSwitch();
     }
-    // Update connected barriers
+    // Update connected barriers (latch open once solved)
     for (const barrier of this.barriers) {
       const sw = this.switches.find(s => s.id === 'switch-hub-1');
-      if (sw) {
-        barrier.isActive = !sw.isActivated;
+      if (sw && sw.isActivated) {
+        barrier.isActive = false;
       }
     }
 

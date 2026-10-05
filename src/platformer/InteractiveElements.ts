@@ -21,13 +21,17 @@ export class PressureSwitch {
     let massOnPlate = 0;
 
     // Check Axel
-    const axelFootX = axelPos.x + axelSize.x * 0.5;
+    const axelLeft = axelPos.x;
+    const axelRight = axelPos.x + axelSize.x;
+    const swLeft = this.pos.x;
+    const swRight = this.pos.x + this.size.x;
     const axelFootY = axelPos.y + axelSize.y;
+    const axelOverlapX = Math.max(0, Math.min(axelRight, swRight) - Math.max(axelLeft, swLeft));
+
     if (
-      axelFootX >= this.pos.x &&
-      axelFootX <= this.pos.x + this.size.x &&
-      axelFootY >= this.pos.y - 0.2 &&
-      axelFootY <= this.pos.y + 0.5
+      axelOverlapX > 0.25 * axelSize.x &&
+      axelFootY >= this.pos.y - 0.35 &&
+      axelFootY <= this.pos.y + 0.8
     ) {
       massOnPlate += axelMass;
     }
@@ -35,13 +39,15 @@ export class PressureSwitch {
     // Check Crates
     for (const crate of crates) {
       if (crate.isCarried) continue;
-      const crateFootX = crate.pos.x + crate.size.x * 0.5;
+      const crateLeft = crate.pos.x;
+      const crateRight = crate.pos.x + crate.size.x;
       const crateFootY = crate.pos.y + crate.size.y;
+      const crateOverlapX = Math.max(0, Math.min(crateRight, swRight) - Math.max(crateLeft, swLeft));
+
       if (
-        crateFootX >= this.pos.x &&
-        crateFootX <= this.pos.x + this.size.x &&
-        crateFootY >= this.pos.y - 0.2 &&
-        crateFootY <= this.pos.y + 0.5
+        crateOverlapX > 0.25 * crate.size.x &&
+        crateFootY >= this.pos.y - 0.35 &&
+        crateFootY <= this.pos.y + 0.8
       ) {
         massOnPlate += crate.mass;
       }

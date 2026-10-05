@@ -2,12 +2,13 @@ import { Vector2 } from '../physics/Vector2.ts';
 
 export interface InputState {
   move: Vector2;
-  jump: boolean;
-  jumpPressed: boolean;
-  sprint: boolean;
+  jump?: boolean;
+  jumpPressed?: boolean;
+  sprint?: boolean;
   boost: boolean;
   brake: boolean;
   action: boolean;
+  actionPressed?: boolean;
   reset: boolean;
   pause: boolean;
   mousePos: Vector2;
@@ -179,6 +180,11 @@ export class InputManager {
         this.isPressed('keye') ||
         this.isPressed('enter') ||
         this.isPressed('action'),
+      actionPressed:
+        this.isJustPressed('e') ||
+        this.isJustPressed('keye') ||
+        this.isJustPressed('enter') ||
+        this.isJustPressed('action'),
       reset: this.isPressed('r') || this.isPressed('keyr'),
       pause: this.isPressed('p') || this.isPressed('keyp') || this.isPressed('escape'),
       mousePos: this.mousePosition,

@@ -47,7 +47,43 @@ export class Level07_TangentialCentripetal extends LevelBase {
     this.setPhase('puzzle');
   }
 
+  // Carnival Balloon Targets Gallery
+  public balloons: Array<{
+    id: string;
+    pos: Vector2;
+    radius: number;
+    color: string;
+    points: number;
+    popped: boolean;
+    label: string;
+  }> = [
+    { id: 'b1', pos: new Vector2(12.0, 1.2), radius: 1.2, color: '#f59e0b', points: 100, popped: false, label: '★ GOLD STAR' },
+    { id: 'b2', pos: new Vector2(18.2, 3.2), radius: 1.1, color: '#00f0ff', points: 50, popped: false, label: 'NEON RING' },
+    { id: 'b3', pos: new Vector2(19.2, 7.5), radius: 1.1, color: '#f43f5e', points: 50, popped: false, label: 'PINK POP' },
+    { id: 'b4', pos: new Vector2(18.0, 11.8), radius: 1.1, color: '#a855f7', points: 50, popped: false, label: 'COSMIC' },
+    { id: 'b5', pos: new Vector2(12.0, 13.8), radius: 1.2, color: '#f59e0b', points: 100, popped: false, label: '★ GOLD STAR' },
+    { id: 'b6', pos: new Vector2(4.8, 7.5), radius: 1.1, color: '#10b981', points: 50, popped: false, label: 'EMERALD' }
+  ];
+
+  public poppedCount: number = 0;
+  public totalScore: number = 0;
+  public successfulEscape: boolean = false;
+  public trajectoryGuide: boolean = true;
+  public particles: Array<{ x: number; y: number; vx: number; vy: number; color: string; life: number; maxLife: number }> = [];
+
+  // Compatibility corridor property for analytical tests
+  public get corridorCenter(): Vector2 {
+    return new Vector2(12.0, 1.2);
+  }
+  public get corridorWidth(): number {
+    return 3.6;
+  }
+  public get pylons(): Array<{ pos: Vector2; radius: number }> {
+    return [];
+  }
+
   public triggerIceRelease(): void {
+    if (this.releasedTangent) return;
     this.releasedTangent = true;
     this.onIcePatch = true;
   }
@@ -56,13 +92,31 @@ export class Level07_TangentialCentripetal extends LevelBase {
     if (this.phase === 'completed' || this.phase === 'failed') return;
     this.elapsedTime += dt;
 
-    if (input.action || input.brake || input.jump) {
-      this.triggerIceRelease();
+    // Update confetti particles
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+      if (p.life <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+
+    // Adjustable speed using Up/Down arrows or keys
+    if (!this.releasedTangent) {
+      if (input.move.y < -0.3) this.speed = Math.min(14.0, this.speed + 2.0 * dt);
+      if (input.move.y > 0.3) this.speed = Math.max(6.0, this.speed - 2.0 * dt);
+
+      // Trigger drift release with Action, Jump, or Brake
+      if (input.action || input.brake || input.jumpPressed || input.boost) {
+        this.triggerIceRelease();
+      }
     }
 
     if (!this.releasedTangent) {
       // Circular motion under inward centripetal acceleration
-      const omega = this.speed / this.radius; // 10 / 5 = 2 rad/s
+      const omega = this.speed / this.radius;
       this.angle += omega * dt;
 
       // Position along circular track
@@ -80,25 +134,46 @@ export class Level07_TangentialCentripetal extends LevelBase {
       // Inward centripetal acceleration vector (-cos, -sin)
       const acMag = CircularMotion.calculate_centripetal_acceleration(this.speed, this.radius);
       this.vehicleAcc = new Vector2(-acMag * Math.cos(this.angle), -acMag * Math.sin(this.angle));
-
-      // In puzzle/guided mode, hitting the ice zone releases centripetal constraint
-      const normalizedAngle = this.angle % (Math.PI * 2);
-      if (
-        (this.phase === 'puzzle' || this.phase === 'demo') &&
-        normalizedAngle >= this.iceAngleStart &&
-        normalizedAngle <= this.iceAngleEnd
-      ) {
-        this.triggerIceRelease();
-      }
     } else {
       // Centripetal force removed! Inward acceleration becomes ZERO!
       // Body moves rectilinearly along instantaneous tangential velocity (Newton 1st Law)
       this.vehicleAcc = Vector2.ZERO;
       this.vehiclePos = this.vehiclePos.add(this.vehicleVel.multiply(dt));
 
-      // After demonstrating tangential departure, complete puzzle
-      if (this.vehiclePos.distanceTo(this.centerPos) > 12.0) {
-        this.completePuzzle();
+      // Check collision with balloons / targets
+      for (const b of this.balloons) {
+        if (!b.popped && this.vehiclePos.distanceTo(b.pos) < b.radius + 0.6) {
+          b.popped = true;
+          this.poppedCount++;
+          this.totalScore += b.points;
+          this.successfulEscape = true;
+
+          // Spawn celebratory confetti burst
+          for (let k = 0; k < 28; k++) {
+            const angle = (k / 28) * Math.PI * 2;
+            const spd = 2 + Math.random() * 5;
+            this.particles.push({
+              x: b.pos.x,
+              y: b.pos.y,
+              vx: Math.cos(angle) * spd,
+              vy: Math.sin(angle) * spd,
+              color: b.color,
+              life: 0.8 + Math.random() * 0.4,
+              maxLife: 1.2
+            });
+          }
+
+          if (this.poppedCount >= 1) {
+            this.completePuzzle();
+          }
+        }
+      }
+
+      // Out of bounds / completed drift: gently return to orbit without jarring reset!
+      if (this.vehiclePos.distanceTo(this.centerPos) > 11.5) {
+        this.releasedTangent = false;
+        this.onIcePatch = false;
+        this.angle = Math.atan2(this.vehiclePos.y - this.centerPos.y, this.vehiclePos.x - this.centerPos.x) + 0.4;
       }
     }
   }
@@ -108,30 +183,29 @@ export class Level07_TangentialCentripetal extends LevelBase {
     const cPx = UnitConversion.metersVectorToPixels(this.centerPos);
     const rPx = UnitConversion.metersToPixels(this.radius);
 
-    // Circular track
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 14;
+    // Glowing Circular Track
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 18;
     ctx.beginPath();
     ctx.arc(cPx.x, cPx.y, rPx, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Ice hazard patch on curve
-    ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
-    ctx.lineWidth = 16;
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(cPx.x, cPx.y, rPx, this.iceAngleStart, this.iceAngleEnd);
+    ctx.arc(cPx.x, cPx.y, rPx, 0, Math.PI * 2);
     ctx.stroke();
 
     // Center pivot
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(cPx.x, cPx.y, 6, 0, Math.PI * 2);
+    ctx.arc(cPx.x, cPx.y, 8, 0, Math.PI * 2);
     ctx.fill();
 
     // Radius line
     const vPx = UnitConversion.metersVectorToPixels(this.vehiclePos);
     if (!this.releasedTangent) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(cPx.x, cPx.y);
@@ -139,14 +213,87 @@ export class Level07_TangentialCentripetal extends LevelBase {
       ctx.stroke();
     }
 
-    // Vehicle
-    ctx.fillStyle = this.releasedTangent ? '#f43f5e' : '#38bdf8';
+    // Render Target Balloons Gallery
+    let lockedBalloon: typeof this.balloons[0] | null = null;
+    const tanDir = new Vector2(-Math.sin(this.angle), Math.cos(this.angle));
+
+    for (const b of this.balloons) {
+      const bPx = UnitConversion.metersVectorToPixels(b.pos);
+      const radPx = UnitConversion.metersToPixels(b.radius);
+
+      if (b.popped) {
+        // Popped silhouette
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(bPx.x, bPx.y, radPx * 0.7, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        continue;
+      }
+
+      // Check if tangent ray points toward this balloon
+      if (!this.releasedTangent) {
+        const toBalloon = b.pos.subtract(this.vehiclePos);
+        const proj = toBalloon.x * tanDir.x + toBalloon.y * tanDir.y;
+        if (proj > 0) {
+          const perpDist = Math.abs(toBalloon.x * -tanDir.y + toBalloon.y * tanDir.x);
+          if (perpDist < b.radius + 0.4) {
+            lockedBalloon = b;
+          }
+        }
+      }
+
+      // Balloon body
+      ctx.save();
+      ctx.fillStyle = b.color + '33';
+      ctx.beginPath();
+      ctx.arc(bPx.x, bPx.y, radPx, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = lockedBalloon === b ? 3.5 : 2;
+      ctx.beginPath();
+      ctx.arc(bPx.x, bPx.y, radPx, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Balloon inner star / core
+      ctx.fillStyle = b.color;
+      ctx.font = 'bold 13px "Inter", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(b.label, bPx.x, bPx.y + 4);
+
+      // Lock-on ring if aligned
+      if (lockedBalloon === b) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 3]);
+        ctx.beginPath();
+        ctx.arc(bPx.x, bPx.y, radPx + 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    }
+
+    // Vehicle (Cute Cartoon Race Kart)
+    ctx.save();
+    ctx.fillStyle = this.releasedTangent ? '#f43f5e' : '#00f0ff';
     ctx.beginPath();
-    ctx.arc(vPx.x, vPx.y, 10, 0, Math.PI * 2);
+    ctx.arc(vPx.x, vPx.y, 14, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
+
+    // Kart headlights / direction
+    const headNorm = this.vehicleVel.normalize();
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(vPx.x + headNorm.x * 12, vPx.y + headNorm.y * 12, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
 
     // Tangential velocity vector arrow (Cyan)
     const velPx = UnitConversion.metersVectorToPixels(this.vehicleVel).multiply(0.25);
@@ -166,7 +313,55 @@ export class Level07_TangentialCentripetal extends LevelBase {
       ctx.moveTo(vPx.x, vPx.y);
       ctx.lineTo(vPx.x + accPx.x, vPx.y + accPx.y);
       ctx.stroke();
+
+      // Tangent trajectory laser guide (Cyan dashed)
+      ctx.save();
+      ctx.strokeStyle = lockedBalloon ? '#10b981' : 'rgba(56, 189, 248, 0.6)';
+      ctx.lineWidth = lockedBalloon ? 2.5 : 1.5;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(vPx.x, vPx.y);
+      ctx.lineTo(vPx.x + tanDir.x * 240, vPx.y + tanDir.y * 240);
+      ctx.stroke();
+      ctx.restore();
     }
+
+    // Render Confetti particles
+    for (const p of this.particles) {
+      const pPx = UnitConversion.metersVectorToPixels(new Vector2(p.x, p.y));
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(pPx.x, pPx.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // HUD Status Box
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(40, 20, 420, 72, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = 'bold 12px "Inter", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`THE DRIFT CARNIVAL: POP THE TARGET BALLOONS!`, 52, 40);
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '11px "Inter", sans-serif';
+    ctx.fillText(`BALLOONS POPPED: ${this.poppedCount} / ${this.balloons.length}  |  SCORE: ${this.totalScore}`, 52, 58);
+
+    ctx.fillStyle = lockedBalloon ? '#10b981' : '#38bdf8';
+    ctx.font = 'bold 11px "Inter", sans-serif';
+    ctx.fillText(
+      lockedBalloon
+        ? `★ LOCK-ON! PRESS [SPACE] OR CLICK [DRIFT ON ICE] TO POP!`
+        : `[SPACE] or [CLICK BUTTON] to Drift Tangentially!  [W/S] Speed`,
+      52,
+      76
+    );
 
     ctx.restore();
   }

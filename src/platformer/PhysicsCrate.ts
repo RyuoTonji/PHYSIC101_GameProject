@@ -13,9 +13,12 @@ export class PhysicsCrate {
   public frictionCoeff: number = 0.35;
   public restitution: number = 0.2; // slight bounciness
 
+  public spawnPos: Vector2;
+
   constructor(id: string, x: number, y: number, mass: number = 20.0) {
     this.id = id;
     this.pos = new Vector2(x, y);
+    this.spawnPos = new Vector2(x, y);
     this.mass = mass;
   }
 
@@ -27,6 +30,13 @@ export class PhysicsCrate {
     platforms: MovingPlatform[]
   ): void {
     if (this.isCarried) {
+      this.vel = Vector2.ZERO;
+      return;
+    }
+
+    // Auto-respawn if fallen below world boundary
+    if (this.pos.y > 22.0) {
+      this.pos = new Vector2(this.spawnPos.x, this.spawnPos.y);
       this.vel = Vector2.ZERO;
       return;
     }

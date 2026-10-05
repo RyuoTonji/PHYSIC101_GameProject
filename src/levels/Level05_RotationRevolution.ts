@@ -31,13 +31,16 @@ export class Level05_RotationRevolution extends LevelBase {
     this.reset();
   }
 
+  public detachCooldown: number = 0;
+
   public reset(): void {
     this.currentAngle = 0;
-    this.totalCycles = 0;
-    this.elapsedTime = 0;
     this.playerPos = new Vector2(4.0, 7.5);
     this.playerVel = Vector2.ZERO;
+    this.elapsedTime = 0;
+    this.totalCycles = 0;
     this.onPlatform = false;
+    this.detachCooldown = 0;
     this.failureContext = null;
     this.setPhase('puzzle');
   }
@@ -45,37 +48,57 @@ export class Level05_RotationRevolution extends LevelBase {
   public fixedUpdate(dt: number, input: InputState): void {
     if (this.phase === 'completed' || this.phase === 'failed') return;
     this.elapsedTime += dt;
+    if (this.detachCooldown > 0) this.detachCooldown -= dt;
 
     // Angular velocity: omega = 2 * PI / T
     const omega = (2 * Math.PI) / this.period;
     this.currentAngle += omega * dt;
     this.totalCycles = this.elapsedTime / this.period;
 
-    // Platform position in revolution
+    // Platform position and instantaneous tangential velocity
     const platformPos = new Vector2(
       this.centerPos.x + this.orbitRadius * Math.cos(this.currentAngle),
       this.centerPos.y + this.orbitRadius * Math.sin(this.currentAngle)
     );
+    const tangentialVel = new Vector2(
+      -omega * this.orbitRadius * Math.sin(this.currentAngle),
+      omega * this.orbitRadius * Math.cos(this.currentAngle)
+    );
 
     if (this.phase === 'puzzle' || this.phase === 'guided') {
-      // Player movement with sprint support
-      const speed = input.sprint ? 7.5 : 5.0;
-      if (input.move.magnitudeSquared() > 0) {
-        this.playerVel = input.move.multiply(speed);
+      if (this.onPlatform) {
+        // Player is riding the revolving shuttle
+        this.playerPos = new Vector2(platformPos.x, platformPos.y);
+        this.playerVel = tangentialVel;
+
+        // Player presses Space, E, Action, or Jump to DETACH / SLINGSHOT!
+        if (input.action || input.jumpPressed || input.boost) {
+          this.onPlatform = false;
+          this.detachCooldown = 0.8; // Prevent immediate re-latching
+          this.playerVel = tangentialVel;
+        }
       } else {
-        this.playerVel = this.playerVel.multiply(0.8);
-      }
+        // Player is in free-flight using thrusters
+        const speed = input.sprint ? 7.5 : 5.0;
+        if (input.move.magnitudeSquared() > 0) {
+          const steerAccel = input.move.multiply(speed);
+          this.playerVel = this.playerVel.multiply(0.92).add(steerAccel.multiply(0.1));
+        } else {
+          // Slight space coasting damping
+          this.playerVel = this.playerVel.multiply(0.995);
+        }
 
-      this.playerPos = this.playerPos.add(this.playerVel.multiply(dt));
+        this.playerPos = this.playerPos.add(this.playerVel.multiply(dt));
 
-      // Platform locking
-      if (this.playerPos.distanceTo(platformPos) < 1.4) {
-        this.onPlatform = true;
-        this.playerPos = platformPos;
+        // Latch onto orbiting shuttle if near and cooldown expired
+        if (this.detachCooldown <= 0 && this.playerPos.distanceTo(platformPos) < 1.4) {
+          this.onPlatform = true;
+          this.playerPos = platformPos;
+        }
       }
 
       // Check win condition (docking at destination landing pad)
-      if (this.playerPos.distanceTo(this.targetLandingPos) < 1.4) {
+      if (this.playerPos.distanceTo(this.targetLandingPos) < 1.6) {
         this.completePuzzle();
       }
     }
@@ -115,21 +138,61 @@ export class Level05_RotationRevolution extends LevelBase {
     ctx.strokeStyle = '#0891b2';
     ctx.stroke();
 
-    // Destination Pad
+    // Destination Pad (green dock)
     const destPx = UnitConversion.metersVectorToPixels(this.targetLandingPos);
     ctx.fillStyle = 'rgba(16, 185, 129, 0.3)';
     ctx.beginPath();
-    ctx.arc(destPx.x, destPx.y, UnitConversion.metersToPixels(1.0), 0, Math.PI * 2);
+    ctx.arc(destPx.x, destPx.y, UnitConversion.metersToPixels(1.2), 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = '#10b981';
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // Player
+    ctx.fillStyle = '#10b981';
+    ctx.font = 'bold 12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('DESTINATION BAY', destPx.x, destPx.y - 28);
+
+    // If on platform, draw projected tangential trajectory guide & release prompt
+    if (this.onPlatform) {
+      const omega = (2 * Math.PI) / this.period;
+      const tanSpeed = this.orbitRadius * omega;
+      const tanDir = new Vector2(
+        -Math.sin(this.currentAngle),
+        Math.cos(this.currentAngle)
+      );
+      
+      // Predicted tangential launch vector (Cyan dashed line)
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(platPx.x, platPx.y);
+      ctx.lineTo(platPx.x + tanDir.x * (tanSpeed * 15), platPx.y + tanDir.y * (tanSpeed * 15));
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Prompt banner
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(platPx.x - 120, platPx.y + 24, 240, 24);
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(platPx.x - 120, platPx.y + 24, 240, 24);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('[SPACE] or [E]: SLINGSHOT DETACH', platPx.x, platPx.y + 40);
+    }
+
+    // Player astronaut
     const pPx = UnitConversion.metersVectorToPixels(this.playerPos);
     ctx.fillStyle = '#ec4899';
     ctx.beginPath();
-    ctx.arc(pPx.x, pPx.y, 10, 0, Math.PI * 2);
+    ctx.arc(pPx.x, pPx.y, 11, 0, Math.PI * 2);
     ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
     ctx.restore();
   }
