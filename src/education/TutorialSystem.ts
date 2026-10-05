@@ -141,14 +141,14 @@ export class TutorialSystem {
       levelId: 7,
       title: 'Level 7: Tangential Velocity & Centripetal Acceleration',
       objective:
-        'Observe circular motion dynamics and trigger the frictionless ice patch to witness tangential inertia in action.',
+        'Pop all 6 target balloons around the arena by timing your drift along the straight tangential trajectory to unlock the quiz.',
       controlsExplanation:
-        'Press [Space], [E], or click [❄️ Cut Centripetal Force] to trigger the ice patch and eliminate inward friction.',
+        'Press [Space], [E], or click [❄️ Cut Centripetal Force (Hit Ice)] to drift tangentially. Use [W/S] or [Up/Down] to adjust speed.',
       stepByStep: [
-        '1. Watch the vehicle round the curve at constant speed v = 10 m/s and radius r = 5 m.',
-        '2. Notice the yellow arrow (centripetal acceleration ac = 20 m/s²) points strictly toward the center.',
-        '3. Notice the cyan arrow (velocity) points strictly tangent to the curve.',
-        '4. Press [Space] or click [❄️ Cut Centripetal Force] to remove inward force. Watch the vehicle continue in a straight line along the tangent vector due to Newton’s First Law (inertia)!'
+        '1. Watch the vehicle round the curve under inward centripetal acceleration (ac = v²/r).',
+        '2. Notice the yellow arrow points strictly inward, while the cyan arrow points tangent to the circle.',
+        '3. When the laser sight aligns with an unpopped balloon, press [Space] to hit the ice patch (eliminate inward friction).',
+        '4. Pop all 6 target balloons to master tangential inertia and unlock the final concept quiz!'
       ],
       physicsInsight:
         'Centripetal acceleration is inward (ac = v²/r). There is NO outward centrifugal force acting on the car. When friction vanishes, the car simply moves in a straight line tangent to the curve because no force is bending its path.',
@@ -159,19 +159,19 @@ export class TutorialSystem {
       levelId: 8,
       title: 'Level 8: Centripetal Force & Real-World Applications',
       objective:
-        'Experiment with string tension (Fc = mv²/r) and explore the washing machine spin cycle to debunk the centrifugal force myth.',
+        'Launch the satellite along straight tangential trajectories to dock at all 3 space stations (Alpha, Beta, and Beacon) to unlock the concept quiz.',
       controlsExplanation:
-        'Use the interactive sliders to adjust Mass (m), Radius (r), and Speed (v). Click [🔄 Switch Scenario] to toggle between Ball on String and Washing Machine Drum.',
+        'Press [Space], [E], or click [🚀 Release / Recall Satellite] to release along the tangent. Adjust Mass, Radius, and Speed using the sliders or [W/S]/[A/D]. Click [🔄 Washing Machine] for the spin cycle scenario.',
       stepByStep: [
-        '1. In Scenario A (Ball on a String): set m = 2.0 kg, v = 10.0 m/s, r = 5.0 m. Notice required string tension Fc = (2)(10²)/5 = 40.0 N (pointing inward).',
-        '2. Increase speed above 12 m/s to exceed string breaking limit (55 N) and watch the ball fly off tangentially.',
-        '3. Click [🔄 Switch Scenario] to view Scenario B (Washing Machine Drum).',
-        '4. Watch the perforated drum spin: the drum wall exerts inward normal force on clothes, while water droplets continue in straight tangential lines through the holes due to inertia!'
+        '1. In Scenario A (Cosmic Satellite Tether): observe required string tension Fc = (2)(10²)/5 = 40.0 N (pointing strictly inward).',
+        '2. When the green laser alignment sight points at an uncleared space station, press [Space] to release the tether.',
+        '3. The satellite flies in a straight line tangent to the circle (Newton 1st Law) and docks with the target station.',
+        '4. Secure all 3 stations around the arena to unlock the final centripetal force quiz!'
       ],
       physicsInsight:
-        'Centripetal force is not a special new force; it is the physical inward force provided by real objects (string tension, friction, drum normal force). In an inertial frame, centrifugal force does NOT push water outward; water simply flies tangent through the holes because the wall cannot push it inward.',
+        'Centripetal force is not a special new force; it is the physical inward force provided by real objects (string tension, friction, drum normal force). When the tether is released, inward force vanishes and the satellite continues in a straight line tangent to the circle (Newton 1st Law).',
       expectedValues:
-        'Fc = m·v²/r = (2 kg)(10 m/s)² / (5 m) = 40.0 N inward.'
+        'Fc = m·v²/r = (2 kg)(10 m/s)² / (5 m) = 40.0 N inward. All 3 stations docked to unlock quiz.'
     },
     9: {
       levelId: 9,

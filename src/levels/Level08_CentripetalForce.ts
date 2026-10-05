@@ -33,9 +33,9 @@ export class Level08_CentripetalForce extends LevelBase {
       title: 'Level 8: Centripetal Force & Real-World Applications',
       subtitle: 'Tension, Spin Cycle & The Centrifugal Myth',
       learningObjective:
-        'Calculate required inward net force Fc = m·v²/r and explore real physical applications (ball on string and washing machine drum), debunking the centrifugal force misconception.',
+        'Calculate required inward net force Fc = m·v²/r and launch the satellite along tangential trajectories to dock at all 3 space stations before the quiz.',
       conceptSummary:
-        'Centripetal force is not a mysterious new force; it is the net real inward force (string tension, drum normal force) needed to maintain circular motion. In the washing machine, water continues tangentially through holes due to inertia, not an outward force.'
+        'Centripetal force is not a mysterious new force; it is the net real inward force (string tension, drum normal force) needed to maintain circular motion. When released, inertia carries the body in a straight line tangent to the circle.'
     });
     this.reset();
   }
@@ -44,6 +44,8 @@ export class Level08_CentripetalForce extends LevelBase {
     this.angle = 0;
     this.stringSnapped = false;
     this.isDocked = false;
+    this.dockedCount = 0;
+    this.completionTimer = 0;
     this.extractedCount = 0;
     this.snapReason = '';
     this.ballPos = new Vector2(this.centerPos.x + this.radius, this.centerPos.y);
@@ -51,6 +53,12 @@ export class Level08_CentripetalForce extends LevelBase {
     this.elapsedTime = 0;
     this.failureContext = null;
     this.setPhase('puzzle');
+
+    if (this.stations) {
+      for (const st of this.stations) {
+        st.cleared = false;
+      }
+    }
 
     // Reset water droplets for washing machine scenario
     this.waterDroplets = [];
@@ -73,22 +81,51 @@ export class Level08_CentripetalForce extends LevelBase {
   }
 
   // Target Space Stations Gallery (Friendly docking targets in all directions!)
-  public stations: Array<{ id: string; name: string; pos: Vector2; radius: number; color: string }> = [
-    { id: 'st1', name: 'ALPHA STATION', pos: new Vector2(18.0, 3.5), radius: 2.2, color: '#38bdf8' },
-    { id: 'st2', name: 'BETA OUTPOST', pos: new Vector2(6.5, 3.5), radius: 2.0, color: '#10b981' },
-    { id: 'st3', name: 'COSMIC BEACON', pos: new Vector2(6.5, 11.5), radius: 2.0, color: '#f59e0b' }
+  public stations: Array<{
+    id: string;
+    name: string;
+    pos: Vector2;
+    radius: number;
+    color: string;
+    cleared: boolean;
+  }> = [
+    { id: 'st1', name: 'ALPHA STATION', pos: new Vector2(18.0, 3.5), radius: 2.2, color: '#38bdf8', cleared: false },
+    { id: 'st2', name: 'BETA OUTPOST', pos: new Vector2(6.5, 3.5), radius: 2.0, color: '#10b981', cleared: false },
+    { id: 'st3', name: 'COSMIC BEACON', pos: new Vector2(6.5, 11.5), radius: 2.0, color: '#f59e0b', cleared: false }
   ];
 
   public targetStation: Vector2 = new Vector2(18.0, 3.5);
   public targetStationRadius: number = 2.2; // meters
   public isDocked: boolean = false;
+  public dockedCount: number = 0;
+  public completionTimer: number = 0;
   public snapReason: string = '';
   public extractedCount: number = 0;
   public celebrationParticles: Array<{ x: number; y: number; vx: number; vy: number; color: string; life: number }> = [];
 
+  public triggerRelease(): void {
+    if (this.isDocked) return;
+    if (!this.stringSnapped) {
+      this.stringSnapped = true;
+      this.snapReason = 'Tether released at tangent trajectory!';
+    } else {
+      this.stringSnapped = false;
+      this.snapReason = 'Recalled to orbit.';
+      this.angle = Math.atan2(this.ballPos.y - this.centerPos.y, this.ballPos.x - this.centerPos.x) + 0.3;
+    }
+  }
+
   public fixedUpdate(dt: number, input: InputState): void {
     if (this.phase === 'completed' || this.phase === 'failed') return;
     this.elapsedTime += dt;
+
+    // Handle brief celebration delay before opening quiz once all targets are cleared
+    if (this.completionTimer > 0) {
+      this.completionTimer -= dt;
+      if (this.completionTimer <= 0) {
+        this.completePuzzle();
+      }
+    }
 
     // Update celebration particles
     for (let i = this.celebrationParticles.length - 1; i >= 0; i--) {
@@ -139,16 +176,22 @@ export class Level08_CentripetalForce extends LevelBase {
         // Tangential flight along inertia
         this.ballPos = this.ballPos.add(this.ballVel.multiply(dt));
 
-        // Check docking with any station
+        // Quick recall if player presses Action while flying
+        if (this.ballPos.distanceTo(this.centerPos) > this.radius + 1.0 && !this.isDocked && (input.action || input.jumpPressed || input.boost)) {
+          this.stringSnapped = false;
+          this.angle = Math.atan2(this.ballPos.y - this.centerPos.y, this.ballPos.x - this.centerPos.x) + 0.3;
+        }
+
+        // Check docking with any uncleared station
         for (const st of this.stations) {
-          if (this.ballPos.distanceTo(st.pos) < st.radius) {
-            this.isDocked = true;
-            this.snapReason = `★ DOCKED AT ${st.name}! Centripetal launch verified!`;
+          if (!st.cleared && this.ballPos.distanceTo(st.pos) < st.radius) {
+            st.cleared = true;
+            this.dockedCount++;
 
             // Spawn celebration stars
-            for (let k = 0; k < 24; k++) {
-              const a = (k / 24) * Math.PI * 2;
-              const spd = 2 + Math.random() * 4;
+            for (let k = 0; k < 28; k++) {
+              const a = (k / 28) * Math.PI * 2;
+              const spd = 2 + Math.random() * 5;
               this.celebrationParticles.push({
                 x: st.pos.x,
                 y: st.pos.y,
@@ -159,13 +202,20 @@ export class Level08_CentripetalForce extends LevelBase {
               });
             }
 
-            this.completePuzzle();
-            return;
+            // User must dock all stations before the quiz unlocks!
+            if (this.dockedCount >= this.stations.length) {
+              this.isDocked = true;
+              this.snapReason = `★ ALL ${this.stations.length} STATIONS SECURED! Mission Complete!`;
+              this.completionTimer = 0.8;
+            } else {
+              this.snapReason = `★ DOCKED AT ${st.name}! (${this.dockedCount}/${this.stations.length}) - Dock remaining stations!`;
+            }
+            break;
           }
         }
 
-        // Missed launch: gently return to orbit without jarring reset
-        if (this.ballPos.distanceTo(this.centerPos) > 13.5 && !this.isDocked) {
+        // Missed launch or completed flyby: gently return to orbit without jarring reset
+        if (this.ballPos.distanceTo(this.centerPos) > 12.5 && !this.isDocked) {
           this.stringSnapped = false;
           this.snapReason = '';
           this.angle = Math.atan2(this.ballPos.y - this.centerPos.y, this.ballPos.x - this.centerPos.x) + 0.3;
@@ -227,8 +277,8 @@ export class Level08_CentripetalForce extends LevelBase {
         const stPx = UnitConversion.metersVectorToPixels(st.pos);
         const stRPx = UnitConversion.metersToPixels(st.radius);
 
-        // Check if tangent ray points towards this station
-        if (!this.stringSnapped) {
+        // Check if tangent ray points towards this uncleared station
+        if (!this.stringSnapped && !st.cleared) {
           const toStation = st.pos.subtract(this.ballPos);
           const proj = toStation.x * tanDir.x + toStation.y * tanDir.y;
           if (proj > 0) {
@@ -240,27 +290,41 @@ export class Level08_CentripetalForce extends LevelBase {
         }
 
         ctx.save();
-        ctx.fillStyle = this.isDocked ? 'rgba(16, 185, 129, 0.2)' : st.color + '22';
+        ctx.fillStyle = st.cleared ? 'rgba(16, 185, 129, 0.25)' : st.color + '22';
         ctx.beginPath();
         ctx.arc(stPx.x, stPx.y, stRPx, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.strokeStyle = this.isDocked ? '#10b981' : st.color;
+        ctx.strokeStyle = st.cleared ? '#10b981' : st.color;
         ctx.lineWidth = lockedStation === st ? 3.5 : 2;
-        ctx.setLineDash([6, 4]);
+        ctx.setLineDash(st.cleared ? [] : [6, 4]);
         ctx.stroke();
         ctx.setLineDash([]);
 
         // Station Core
-        ctx.fillStyle = st.color;
+        ctx.fillStyle = st.cleared ? '#10b981' : st.color;
         ctx.beginPath();
         ctx.arc(stPx.x, stPx.y, 8, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = '#e2e8f0';
-        ctx.font = 'bold 11px "Inter", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(st.name, stPx.x, stPx.y - stRPx - 8);
+        if (st.cleared) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 12px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('✓', stPx.x, stPx.y);
+          ctx.textBaseline = 'alphabetic';
+
+          ctx.fillStyle = '#10b981';
+          ctx.font = 'bold 11px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`${st.name} (✓ DOCKED)`, stPx.x, stPx.y - stRPx - 8);
+        } else {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = 'bold 11px "Inter", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(st.name, stPx.x, stPx.y - stRPx - 8);
+        }
 
         if (lockedStation === st) {
           ctx.strokeStyle = '#ffffff';
@@ -268,6 +332,10 @@ export class Level08_CentripetalForce extends LevelBase {
           ctx.beginPath();
           ctx.arc(stPx.x, stPx.y, stRPx + 6, 0, Math.PI * 2);
           ctx.stroke();
+
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 10px monospace';
+          ctx.fillText('TARGET IN SIGHT', stPx.x, stPx.y + stRPx + 16);
         }
         ctx.restore();
       }
@@ -352,42 +420,66 @@ export class Level08_CentripetalForce extends LevelBase {
       // Tension Safety Meter HUD Banner
       const currentFc = Forces.calculate_centripetal_force(this.mass, this.speed, this.radius);
 
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-      ctx.strokeStyle = '#38bdf8';
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+      ctx.strokeStyle = this.isDocked ? '#10b981' : '#38bdf8';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(40, 20, 420, 72, 8);
+      ctx.roundRect(40, 20, 450, 78, 8);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = '#e2e8f0';
       ctx.font = 'bold 12px "Inter", sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText(`COSMIC SATELLITE TETHER (Fc = m·v²/r = ${currentFc.toFixed(1)} N)`, 52, 40);
+      ctx.fillText(`COSMIC SATELLITE TETHER (Fc = m·v²/r = ${currentFc.toFixed(1)} N)`, 52, 38);
 
       // Tension bar
       ctx.fillStyle = '#1e293b';
-      ctx.fillRect(52, 48, 250, 10);
+      ctx.fillRect(52, 46, 210, 10);
       const tensionFrac = Math.min(1.0, currentFc / 85.0);
       ctx.fillStyle = tensionFrac > 0.8 ? '#f43f5e' : '#38bdf8';
-      ctx.fillRect(52, 48, 250 * tensionFrac, 10);
+      ctx.fillRect(52, 46, 210 * tensionFrac, 10);
 
       ctx.fillStyle = '#94a3b8';
       ctx.font = '10px monospace';
-      ctx.fillText(`${currentFc.toFixed(1)} N Tension`, 310, 57);
+      ctx.fillText(`${currentFc.toFixed(1)} N`, 268, 55);
 
-      ctx.fillStyle = lockedStation ? '#10b981' : '#38bdf8';
+      // Station Docked Progress Badge
+      ctx.fillStyle = this.dockedCount >= this.stations.length ? '#10b981' : '#f59e0b';
+      ctx.font = 'bold 11px monospace';
+      ctx.fillText(`DOCKED: ${this.dockedCount}/${this.stations.length}`, 330, 55);
+
+      // Dot indicators
+      for (let sIdx = 0; sIdx < this.stations.length; sIdx++) {
+        const dotX = 425 + sIdx * 14;
+        ctx.beginPath();
+        ctx.arc(dotX, 51, 4, 0, Math.PI * 2);
+        if (this.stations[sIdx].cleared) {
+          ctx.fillStyle = '#10b981';
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      }
+
+      ctx.fillStyle = this.isDocked
+        ? '#10b981'
+        : lockedStation
+        ? '#10b981'
+        : '#38bdf8';
       ctx.font = 'bold 11px "Inter", sans-serif';
       ctx.fillText(
-        lockedStation
-          ? `★ STATION IN SIGHT! PRESS [SPACE] OR CLICK TO DOCK!`
+        this.isDocked
+          ? '★ ALL 3 STATIONS DOCKED! Unlocking concept quiz...'
+          : lockedStation
+          ? `★ ${lockedStation.name} IN SIGHT! PRESS [SPACE] TO DOCK! (${this.dockedCount}/${this.stations.length})`
           : !this.stringSnapped
-          ? '[SPACE / CLICK] Launch along tangent  |  [W/S] Speed  |  [A/D] Orbit Radius'
-          : this.isDocked
-          ? 'MISSION COMPLETE! Centripetal force converted to tangential flight.'
-          : 'Returning to orbit...',
+          ? `Dock all ${this.stations.length} stations! [SPACE / CLICK] Launch tangent  |  [W/S] Speed  |  [A/D] Radius`
+          : 'Satellite coasting along tangent inertia... (Press [SPACE] to recall)',
         52,
-        78
+        80
       );
     } else {
       // Washing machine rotating drum
@@ -521,8 +613,8 @@ export class Level08_CentripetalForce extends LevelBase {
       activeFormulaLatex: 'F_c = m · v² / r = m · r · ω²',
       substitutedFormula:
         this.scenario === 'ball_on_string'
-          ? `Fc = (${this.mass}kg)(${this.speed}m/s)² / (${this.radius}m) = ${fc.toFixed(1)} N (Tension in String)`
-          : `Spin cycle: Normal force Fc = m·r·ω² on clothes. Water escapes along straight tangent due to inertia!`
+          ? `Fc = (${this.mass}kg)(${this.speed}m/s)² / (${this.radius}m) = ${fc.toFixed(1)} N (Tension in String) | Docked: ${this.dockedCount}/${this.stations.length}`
+          : `Spin cycle: Normal force Fc = m·r·ω² on clothes. Water escapes along straight tangent due to inertia! | Extracted: ${this.extractedCount}/12`
     };
   }
 

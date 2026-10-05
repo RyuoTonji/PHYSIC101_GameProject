@@ -118,8 +118,12 @@ window.addEventListener('DOMContentLoaded', () => {
             <label class="dock-slider-label">Speed: <span id="lbl-l8-v">${lvl8.speed.toFixed(1)} m/s</span></label>
             <input type="range" class="dock-slider" id="slider-l8-v" min="2.0" max="15.0" step="0.5" value="${lvl8.speed}" />
           </div>
+          <button class="btn btn-hint" id="btn-l8-release">🚀 Release / Recall</button>
           <button class="btn btn-secondary" id="btn-l8-switch">🔄 Washing Machine</button>
         `;
+        document.getElementById('btn-l8-release')?.addEventListener('click', () => {
+          lvl8.triggerRelease();
+        });
         document.getElementById('slider-l8-m')?.addEventListener('input', e => {
           lvl8.mass = parseFloat((e.target as HTMLInputElement).value);
           const lbl = document.getElementById('lbl-l8-m');

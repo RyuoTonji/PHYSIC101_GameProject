@@ -172,6 +172,47 @@ describe('Level Mechanics and Systems Integration (Levels 1-8)', () => {
       }
       expect(lvl.waterDroplets.length).toBe(24);
     });
+
+    it('requires docking all stations before completing the puzzle and opening quiz', () => {
+      const lvl = new Level08_CentripetalForce();
+      lvl.setPhase('puzzle');
+
+      expect(lvl.stations.length).toBe(3);
+      expect(lvl.dockedCount).toBe(0);
+
+      // Dock at first station
+      lvl.ballPos = new Vector2(lvl.stations[0].pos.x, lvl.stations[0].pos.y);
+      lvl.stringSnapped = true;
+      lvl.fixedUpdate(1 / 60, mockInput);
+
+      expect(lvl.stations[0].cleared).toBe(true);
+      expect(lvl.dockedCount).toBe(1);
+      expect(lvl.isDocked).toBe(false);
+      expect(lvl.phase).toBe('puzzle');
+
+      // Dock at second station
+      lvl.ballPos = new Vector2(lvl.stations[1].pos.x, lvl.stations[1].pos.y);
+      lvl.fixedUpdate(1 / 60, mockInput);
+
+      expect(lvl.stations[1].cleared).toBe(true);
+      expect(lvl.dockedCount).toBe(2);
+      expect(lvl.isDocked).toBe(false);
+      expect(lvl.phase).toBe('puzzle');
+
+      // Dock at third station (final station)
+      lvl.ballPos = new Vector2(lvl.stations[2].pos.x, lvl.stations[2].pos.y);
+      lvl.fixedUpdate(1 / 60, mockInput);
+
+      expect(lvl.stations[2].cleared).toBe(true);
+      expect(lvl.dockedCount).toBe(3);
+      expect(lvl.isDocked).toBe(true);
+
+      // Step forward celebration timer (0.8s)
+      for (let i = 0; i < 50; i++) {
+        lvl.fixedUpdate(1 / 60, mockInput);
+      }
+      expect(lvl.phase).toBe('explanation');
+    });
   });
 
   describe('Educational Systems Integration', () => {

@@ -42,6 +42,15 @@ export class Level07_TangentialCentripetal extends LevelBase {
     this.vehicleAcc = new Vector2(-20.0, 0);
     this.onIcePatch = false;
     this.releasedTangent = false;
+    this.poppedCount = 0;
+    this.totalScore = 0;
+    this.successfulEscape = false;
+    this.completionTimer = 0;
+    if (this.balloons) {
+      for (const b of this.balloons) {
+        b.popped = false;
+      }
+    }
     this.elapsedTime = 0;
     this.failureContext = null;
     this.setPhase('puzzle');
@@ -69,6 +78,7 @@ export class Level07_TangentialCentripetal extends LevelBase {
   public totalScore: number = 0;
   public successfulEscape: boolean = false;
   public trajectoryGuide: boolean = true;
+  public completionTimer: number = 0;
   public particles: Array<{ x: number; y: number; vx: number; vy: number; color: string; life: number; maxLife: number }> = [];
 
   // Compatibility corridor property for analytical tests
@@ -91,6 +101,14 @@ export class Level07_TangentialCentripetal extends LevelBase {
   public fixedUpdate(dt: number, input: InputState): void {
     if (this.phase === 'completed' || this.phase === 'failed') return;
     this.elapsedTime += dt;
+
+    // Handle brief celebration delay before opening quiz once all balloons are popped
+    if (this.completionTimer > 0) {
+      this.completionTimer -= dt;
+      if (this.completionTimer <= 0) {
+        this.completePuzzle();
+      }
+    }
 
     // Update confetti particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
@@ -146,7 +164,6 @@ export class Level07_TangentialCentripetal extends LevelBase {
           b.popped = true;
           this.poppedCount++;
           this.totalScore += b.points;
-          this.successfulEscape = true;
 
           // Spawn celebratory confetti burst
           for (let k = 0; k < 28; k++) {
@@ -163,8 +180,10 @@ export class Level07_TangentialCentripetal extends LevelBase {
             });
           }
 
-          if (this.poppedCount >= 1) {
-            this.completePuzzle();
+          // User must pop ALL balloons before triggering the quiz!
+          if (this.poppedCount >= this.balloons.length) {
+            this.successfulEscape = true;
+            this.completionTimer = 0.8;
           }
         }
       }
@@ -353,12 +372,14 @@ export class Level07_TangentialCentripetal extends LevelBase {
     ctx.font = '11px "Inter", sans-serif';
     ctx.fillText(`BALLOONS POPPED: ${this.poppedCount} / ${this.balloons.length}  |  SCORE: ${this.totalScore}`, 52, 58);
 
-    ctx.fillStyle = lockedBalloon ? '#10b981' : '#38bdf8';
+    ctx.fillStyle = this.poppedCount >= this.balloons.length ? '#10b981' : lockedBalloon ? '#10b981' : '#38bdf8';
     ctx.font = 'bold 11px "Inter", sans-serif';
     ctx.fillText(
-      lockedBalloon
+      this.poppedCount >= this.balloons.length
+        ? `★ ALL ${this.balloons.length} BALLOONS POPPED! OPENING QUIZ...`
+        : lockedBalloon
         ? `★ LOCK-ON! PRESS [SPACE] OR CLICK [DRIFT ON ICE] TO POP!`
-        : `[SPACE] or [CLICK BUTTON] to Drift Tangentially!  [W/S] Speed`,
+        : `Pop all ${this.balloons.length} balloons to unlock the quiz! [SPACE] Drift  |  [W/S] Speed`,
       52,
       76
     );
